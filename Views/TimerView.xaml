@@ -1,0 +1,100 @@
+<UserControl x:Class="Pomidoro.Views.TimerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:Pomidoro.Localization">
+
+    <Border Style="{StaticResource PanelBorder}" Padding="24,22">
+        <StackPanel>
+            <TextBlock Text="{Binding PhaseText}"
+                       FontSize="12"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsWorking}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsResting}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource RestBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <TextBlock Text="{Binding TimeText}"
+                       FontSize="76"
+                       FontWeight="Light"
+                       Foreground="{StaticResource TextBrush}"
+                       HorizontalAlignment="Center"
+                       Margin="0,4,0,0" />
+
+            <TextBlock Text="{Binding HintText}"
+                       Style="{StaticResource CaptionText}"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       Margin="0,2,0,18" />
+
+            <ProgressBar Height="8"
+                         Minimum="0"
+                         Maximum="1"
+                         Value="{Binding Progress, Mode=OneWay}">
+                <ProgressBar.Style>
+                    <Style TargetType="ProgressBar">
+                        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ProgressBar">
+                                    <Border Background="{StaticResource WellBrush}"
+                                            CornerRadius="4"
+                                            ClipToBounds="True">
+                                        <Grid>
+                                            <Rectangle x:Name="PART_Track" />
+                                            <Rectangle x:Name="PART_Indicator"
+                                                       Fill="{TemplateBinding Foreground}"
+                                                       HorizontalAlignment="Left"
+                                                       RadiusX="4"
+                                                       RadiusY="4" />
+                                        </Grid>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsResting}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource RestBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ProgressBar.Style>
+            </ProgressBar>
+
+            <Grid Margin="0,20,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0"
+                        Content="{loc:Text StartButton}"
+                        Style="{StaticResource PrimaryButton}"
+                        Command="{Binding StartCommand}" />
+
+                <Button Grid.Column="2"
+                        Content="{Binding PauseText}"
+                        Style="{StaticResource FlatButton}"
+                        Command="{Binding PauseCommand}" />
+
+                <Button Grid.Column="4"
+                        Content="{loc:Text StopButton}"
+                        Style="{StaticResource FlatButton}"
+                        Command="{Binding StopCommand}" />
+            </Grid>
+        </StackPanel>
+    </Border>
+</UserControl>

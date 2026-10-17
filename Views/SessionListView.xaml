@@ -1,0 +1,111 @@
+<UserControl x:Class="Pomidoro.Views.SessionListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:Pomidoro.Localization">
+
+    <!-- Один список на оба экрана. Ширины колонок заданы один раз: заголовок и строки
+         связаны SharedSizeGroup, поэтому разъехаться они не могут. -->
+    <Grid Grid.IsSharedSizeScope="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="10,14,10,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="DateColumn" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="EndColumn" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="MinutesColumn" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="DeleteColumn" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0"
+                       Text="{loc:Text ColumnDate}"
+                       Style="{StaticResource CaptionText}"
+                       Margin="0,0,12,0"
+                       Visibility="{Binding ShowsDate, Converter={StaticResource BoolToVisibility}}" />
+
+            <TextBlock Grid.Column="1" Text="{loc:Text ColumnEnd}" Style="{StaticResource CaptionText}" Margin="0,0,12,0" />
+            <TextBlock Grid.Column="2" Text="{loc:Text ColumnMinutes}" Style="{StaticResource CaptionText}" Margin="0,0,12,0" />
+            <TextBlock Grid.Column="3" Text="{loc:Text ColumnType}" Style="{StaticResource CaptionText}" Margin="4,0,0,0" />
+            <TextBlock Grid.Column="4" Text="" Width="26" />
+        </Grid>
+
+        <Border Grid.Row="1" Style="{StaticResource WellBorder}">
+            <Grid>
+                <TextBlock Text="{Binding EmptyText}"
+                           Style="{StaticResource CaptionText}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Rows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- Background обязателен: без него наведение не ловится над пустотой -->
+                                <Grid x:Name="RowRoot" Margin="0,2" Background="Transparent">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="DateColumn" />
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="EndColumn" />
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="MinutesColumn" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="DeleteColumn" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Date}"
+                                               Style="{StaticResource CaptionText}"
+                                               FontSize="12"
+                                               FontWeight="Normal"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,12,0"
+                                               Visibility="{Binding ShowsDate, Converter={StaticResource BoolToVisibility}}" />
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding EndTime}"
+                                               Style="{StaticResource ValueText}"
+                                               FontSize="13"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,12,0" />
+
+                                    <TextBox Grid.Column="2"
+                                             Text="{Binding Minutes, UpdateSourceTrigger=LostFocus}"
+                                             Style="{StaticResource MinutesCell}"
+                                             ToolTip="{loc:Text MinutesTip}"
+                                             ToolTipService.InitialShowDelay="200"
+                                             PreviewTextInput="OnDigitsOnlyInput"
+                                             KeyDown="OnCellKeyDown" />
+
+                                    <ComboBox Grid.Column="3"
+                                              ItemsSource="{Binding TypeOptions}"
+                                              SelectedItem="{Binding SelectedOption}"
+                                              Style="{StaticResource TypeCombo}"
+                                              ToolTip="{loc:Text TypeTip}"
+                                              ToolTipService.InitialShowDelay="200" />
+
+                                    <Button x:Name="DeleteButton"
+                                            Grid.Column="4"
+                                            Content="&#xE74D;"
+                                            Style="{StaticResource RowDeleteButton}"
+                                            Visibility="Hidden"
+                                            Command="{Binding DeleteCommand}"
+                                            AutomationProperties.Name="{loc:Text DeleteRowName}"
+                                            ToolTip="{loc:Text DeleteRowTip}"
+                                            ToolTipService.InitialShowDelay="200" />
+                                </Grid>
+
+                                <DataTemplate.Triggers>
+                                    <Trigger SourceName="RowRoot" Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="DeleteButton" Property="Visibility" Value="Visible" />
+                                    </Trigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

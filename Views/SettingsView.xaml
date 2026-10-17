@@ -1,0 +1,145 @@
+<UserControl x:Class="Pomidoro.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:Pomidoro.Localization">
+
+    <StackPanel Width="230">
+        <TextBlock Text="{loc:Text DurationCaption}" Style="{StaticResource CaptionText}" Margin="0,0,0,10" />
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="{loc:Text WorkMinutesCaption}" Style="{StaticResource CaptionText}" Margin="0,0,0,5" />
+                <TextBox Text="{Binding WorkMinutes, UpdateSourceTrigger=LostFocus}"
+                         Style="{StaticResource SettingsBox}"
+                         MaxLength="3"
+                         AutomationProperties.Name="{loc:Text WorkMinutesName}"
+                         PreviewTextInput="OnDigitsOnlyInput" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="{loc:Text RestMinutesCaption}" Style="{StaticResource CaptionText}" Margin="0,0,0,5" />
+                <TextBox Text="{Binding RestMinutes, UpdateSourceTrigger=LostFocus}"
+                         Style="{StaticResource SettingsBox}"
+                         MaxLength="3"
+                         AutomationProperties.Name="{loc:Text RestMinutesName}"
+                         PreviewTextInput="OnDigitsOnlyInput" />
+            </StackPanel>
+        </Grid>
+
+        <TextBlock Text="{loc:Text AppliesNextRun}"
+                   Style="{StaticResource CaptionText}"
+                   TextWrapping="Wrap"
+                   Margin="0,10,0,0" />
+
+        <Separator Background="{StaticResource BorderBrush}" Margin="0,16,0,12" />
+
+        <TextBlock Text="{loc:Text DayBoundaryCaption}" Style="{StaticResource CaptionText}" Margin="0,0,0,10" />
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="{loc:Text HourCaption}" Style="{StaticResource CaptionText}" Margin="0,0,0,5" />
+                <TextBox Text="{Binding DayBoundaryHour, UpdateSourceTrigger=LostFocus}"
+                         Style="{StaticResource SettingsBox}"
+                         MaxLength="2"
+                         AutomationProperties.Name="{loc:Text DayBoundaryName}"
+                         ToolTip="{loc:Text DayBoundaryTip}"
+                         PreviewTextInput="OnDigitsOnlyInput" />
+            </StackPanel>
+        </Grid>
+
+        <TextBlock Text="{Binding DayBoundaryHint}"
+                   Style="{StaticResource CaptionText}"
+                   TextWrapping="Wrap"
+                   Margin="0,10,0,0" />
+
+        <Separator Background="{StaticResource BorderBrush}" Margin="0,16,0,12" />
+
+        <TextBlock Text="{loc:Text TypesCaption}" Style="{StaticResource CaptionText}" Margin="0,0,0,8" />
+
+        <Border Background="{StaticResource SurfaceBrush}" CornerRadius="6" Padding="6,4">
+            <Grid>
+                <TextBlock Text="{loc:Text TypesEmpty}"
+                           Style="{StaticResource CaptionText}"
+                           HorizontalAlignment="Center"
+                           Margin="0,6"
+                           Visibility="{Binding HasNoTypes, Converter={StaticResource BoolToVisibility}}" />
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="160">
+                    <ItemsControl ItemsSource="{Binding Types}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="26" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding}"
+                                               Style="{StaticResource ValueText}"
+                                               FontSize="13"
+                                               TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center"
+                                               Margin="4,0,0,0" />
+
+                                    <Button Grid.Column="1"
+                                            Content="&#xE711;"
+                                            Style="{StaticResource RowDeleteButton}"
+                                            Command="{Binding DataContext.RemoveTypeCommand,
+                                                              RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"
+                                            AutomationProperties.Name="{loc:Text RemoveTypeName}"
+                                            ToolTip="{loc:Text RemoveTypeTip}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <Grid Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBox Grid.Column="0"
+                     Text="{Binding NewTypeName, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource SettingsBox}"
+                     MaxLength="120"
+                     TextAlignment="Left"
+                     AutomationProperties.Name="{loc:Text NewTypeNameLabel}"
+                     ToolTip="{loc:Text NewTypeTip}">
+                <TextBox.InputBindings>
+                    <KeyBinding Key="Enter" Command="{Binding AddTypeCommand}" />
+                </TextBox.InputBindings>
+            </TextBox>
+
+            <Button Grid.Column="2"
+                    Content="{loc:Text AddButton}"
+                    Style="{StaticResource SmallButton}"
+                    Command="{Binding AddTypeCommand}" />
+        </Grid>
+
+        <Separator Background="{StaticResource BorderBrush}" Margin="0,16,0,12" />
+
+        <Button Content="{loc:Text SqlConsole}"
+                Style="{StaticResource SmallButton}"
+                Command="{Binding OpenSqlConsoleCommand}"
+                ToolTip="{loc:Text SqlConsoleTip}" />
+    </StackPanel>
+</UserControl>

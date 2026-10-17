@@ -1,0 +1,13 @@
+bin/
+obj/
+publish/
+TestResults/
+
+.vs/
+*.user
+*.suo
+
+# История помидорок — личные данные, не для репозитория
+pomodoro.db
+pomodoro.db-shm
+pomodoro.db-wal

@@ -1,0 +1,65 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Pomidoro</AssemblyName>
+    <RootNamespace>Pomidoro</RootNamespace>
+    <Configurations>Debug;DebugLocal;Release</Configurations>
+    <NeutralLanguage>ru-RU</NeutralLanguage>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DefaultItemExcludes>$(DefaultItemExcludes);tests\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <!--
+    Язык выбирается при сборке: AppLanguage=en даёт английскую версию.
+    Переключателя во время работы нет, русская и английская выпускаются
+    отдельными файлами.
+
+    Константа добавляется целью, а не условным PropertyGroup: свойство может
+    прийти из профиля публикации, а профиль импортируется уже после того,
+    как тело .csproj вычислено. Цель выполняется позже импортов и видит его.
+  -->
+  <Target Name="AddLanguageConstant" BeforeTargets="BeforeCompile" Condition="'$(AppLanguage)' == 'en'">
+    <PropertyGroup>
+      <DefineConstants>$(DefineConstants);ENGLISH</DefineConstants>
+    </PropertyGroup>
+  </Target>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'DebugLocal'">
+    <DefineConstants>$(DefineConstants);DEBUG;DEBUG_LOCAL</DefineConstants>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      WinForms подключён только ради NotifyIcon: своего значка в трее у WPF нет.
+      Неявные using-и WinForms сняты, иначе его Button, TextBox и MessageBox
+      конфликтуют с одноимёнными типами WPF по всему проекту.
+    -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.11" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Pomidoro.Tests" />
+  </ItemGroup>
+
+</Project>

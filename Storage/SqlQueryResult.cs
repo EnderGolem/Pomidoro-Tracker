@@ -1,0 +1,19 @@
+namespace Pomidoro.Storage;
+
+internal sealed class SqlQueryResult
+{
+    public required IReadOnlyList<SqlResultSet> Sets { get; init; }
+
+    public required int RecordsAffected { get; init; }
+
+    public required long ElapsedMs { get; init; }
+
+    public string? Error { get; init; }
+
+    public bool Failed => Error is not null;
+
+    public int RowCount => Sets.Sum(set => set.Rows.Count);
+
+    // ExecuteReader возвращает -1 для SELECT: показывать такое число пользователю незачем.
+    public int ChangedRows => Math.Max(RecordsAffected, 0);
+}
