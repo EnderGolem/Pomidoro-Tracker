@@ -304,7 +304,7 @@ internal sealed class SqliteSessionStore : ISessionStore, ISqlConsole, IDisposab
     private static string FormatUtc(DateTime endUtc) =>
         endUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
 
-    // Informational column for manual queries from the README: queries don't filter on it.
+    // Informational column for manual queries (docs/03-storage.md): queries don't filter on it.
     private static string FormatLocalDate(DateTime endLocal) =>
         endLocal.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 

@@ -294,7 +294,7 @@ will remember what was meant.
 Gear → "Developer SQL". Or any SQLite client at the path
 shown in the top line of the console window.
 
-Everyday queries are in the [root README](../README.md#useful-queries).
+Everyday queries are in [03-storage.md](03-storage.md#useful-queries).
 
 If the application is running, keep in mind: there is one connection and it lives in the process. A third-party
 client may not see the latest changes until they are committed, and a long transaction

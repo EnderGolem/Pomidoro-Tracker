@@ -103,7 +103,7 @@ so the `Kind` check is a separate line.
 ### `LocalDate` — a reference column
 
 The local end date as `YYYY-MM-DD`. **The application never queries by it.**
-It is filled on insert and exists only for the manual queries from the README:
+It is filled on insert and exists only for [manual queries](#useful-queries):
 `WHERE LocalDate LIKE '2026%'` reads better than UTC arithmetic.
 
 Queries must not filter on it: the day boundary is configurable, and a value written
@@ -311,3 +311,45 @@ there is no point in showing the user "rows changed: -1".
 The result is printed by `Formatting/SqlResultText`: it aligns columns to the longest
 value, separates multiple sets with headers, and labels an empty result as
 "(empty)". It is a pure function and can be tested without a window.
+
+## Useful queries
+
+For the console or any SQLite client.
+
+```sql
+-- hours per year
+SELECT ROUND(SUM(DurationSec) / 3600.0, 1) AS hours
+FROM WorkSessions
+WHERE LocalDate LIKE '2026%';
+
+-- by month
+SELECT substr(LocalDate, 1, 7)              AS month,
+       COUNT(*)                             AS pomodoros,
+       ROUND(SUM(DurationSec) / 3600.0, 1)  AS hours
+FROM WorkSessions
+GROUP BY month
+ORDER BY month;
+
+-- where the time goes
+SELECT CASE WHEN Type = '' THEN '(no type)' ELSE Type END AS type,
+       COUNT(*)                            AS pomodoros,
+       ROUND(SUM(DurationSec) / 3600.0, 1) AS hours
+FROM WorkSessions
+GROUP BY lower(Type)
+ORDER BY hours DESC;
+
+-- by day of week: when do I actually work
+SELECT CASE CAST(strftime('%w', LocalDate) AS INTEGER)
+           WHEN 0 THEN 'Sun' WHEN 1 THEN 'Mon' WHEN 2 THEN 'Tue' WHEN 3 THEN 'Wed'
+           WHEN 4 THEN 'Thu' WHEN 5 THEN 'Fri' ELSE 'Sat' END AS day,
+       ROUND(SUM(DurationSec) / 3600.0, 1) AS hours
+FROM WorkSessions
+GROUP BY strftime('%w', LocalDate)
+ORDER BY strftime('%w', LocalDate);
+
+-- at what hours of the day pomodoros finish
+SELECT strftime('%H', datetime(EndUtc, 'localtime')) AS hour, COUNT(*) AS n
+FROM WorkSessions
+GROUP BY hour
+ORDER BY hour;
+```

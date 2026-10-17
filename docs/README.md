@@ -1,8 +1,7 @@
 # Documentation
 
 This is a detailed walkthrough of how the pomodoro tracker is built: what it is made of, why
-it is made this way and where to find things. The root [README](../README.md) answers the question
-"what is this and how do I run it"; this one answers "how does it work inside".
+it is made this way and where to find things.
 
 ## Where to start
 

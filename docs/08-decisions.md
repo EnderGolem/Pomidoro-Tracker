@@ -38,7 +38,7 @@ the only source of truth has to be the moment in UTC.
 The `LocalDate` column is kept for convenient manual queries (`WHERE LocalDate LIKE '2026%'`)
 and for reference — the application does not select anything by it.
 
-*Instead:* drop the column altogether. Rejected: it does no harm, and the queries in the README
+*Instead:* drop the column altogether. Rejected: it does no harm, and the [manual queries](03-storage.md#useful-queries)
 read better with it.
 
 ### `Pooling = false` in the connection string
@@ -72,7 +72,7 @@ command in the console:
 The trash icon appears only when hovering over a row; a dialog for every action
 in a small list is more annoying than a rare mistake.
 
-*Cost:* a deletion cannot be undone. This is a deliberate trade-off, and it is noted in the README.
+*Cost:* a deletion cannot be undone. This is a deliberate trade-off.
 
 ---
 

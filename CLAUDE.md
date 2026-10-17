@@ -2,6 +2,8 @@
 
 A desktop pomodoro tracker for Windows: WPF, .NET 9, SQLite next to the `.exe`.
 One window, two screens (timer and statistics), a tray icon.
+A personal tool for a single machine: no sync, accounts, notifications, export
+or theme choice.
 
 ## Documentation
 
