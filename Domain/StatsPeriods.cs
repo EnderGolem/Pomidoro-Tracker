@@ -12,7 +12,7 @@ internal static class StatsPeriods
         StatsPeriod.PreviousMonth => new DayRange(MonthStart(today).AddMonths(-1), MonthStart(today).AddDays(-1)),
         _ => DayRange.SingleDay(today)
     };
-    // Неделя начинается с понедельника, а не с воскресенья, как по умолчанию в DayOfWeek.
+    // The week starts on Monday, not on Sunday as DayOfWeek does by default.
     private static DateOnly WeekStart(DateOnly day) => day.AddDays(-(((int)day.DayOfWeek + 6) % 7));
 
     private static DateOnly MonthStart(DateOnly day) => new(day.Year, day.Month, 1);

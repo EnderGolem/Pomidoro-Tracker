@@ -11,7 +11,7 @@
         FontFamily="Segoe UI">
 
     <Grid>
-        <!-- Таймер и сегодняшний день -->
+        <!-- Timer and today -->
         <Grid Margin="18" Visibility="{Binding IsTimerVisible, Converter={StaticResource BoolToVisibility}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -38,7 +38,7 @@
             <views:TodayView Grid.Row="2" DataContext="{Binding Today}" Margin="0,14,0,0" />
         </Grid>
 
-        <!-- Статистика -->
+        <!-- Statistics -->
         <Grid Margin="18" Visibility="{Binding IsStatsVisible, Converter={StaticResource BoolToVisibility}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -62,7 +62,7 @@
             <views:StatsView Grid.Row="1" DataContext="{Binding Stats}" Margin="0,14,0,0" />
         </Grid>
 
-        <!-- Меню под шестерёнкой -->
+        <!-- Menu under the gear -->
         <Popup PlacementTarget="{Binding ElementName=SettingsButton}"
                Placement="Bottom"
                VerticalOffset="6"

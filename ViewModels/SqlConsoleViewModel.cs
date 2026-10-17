@@ -22,8 +22,8 @@ internal sealed class SqlConsoleViewModel : ObservableObject
         ClearCommand = new RelayCommand(Clear);
     }
 
-    // Запрос мог изменить что угодно, вплоть до удаления таблиц, поэтому главное
-    // окно после каждого выполнения перечитывает базу заново.
+    // The query could have changed anything, up to dropping tables, so the main
+    // window reloads the database from scratch after every run.
     public event EventHandler? Executed;
 
     public ICommand ClearCommand { get; }
@@ -48,8 +48,8 @@ internal sealed class SqlConsoleViewModel : ObservableObject
         private set => Set(ref _status, value);
     }
 
-    // Выделение приходит из окна: TextBox.SelectedText не является свойством зависимости
-    // и привязать его к модели нельзя.
+    // The selection comes from the window: TextBox.SelectedText is not a dependency property
+    // and can't be bound to the model.
     public void Run(string? selectedText)
     {
         string sql = string.IsNullOrWhiteSpace(selectedText) ? Query : selectedText;

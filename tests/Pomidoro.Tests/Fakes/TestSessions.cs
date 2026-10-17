@@ -4,8 +4,8 @@ namespace Pomidoro.Tests.Fakes;
 
 internal static class TestSessions
 {
-    // Сессии задаются локальным временем: WorkSession.EndLocal считается по часовому поясу
-    // машины, и без этого тесты зависели бы от того, где их запускают.
+    // Sessions are given in local time: WorkSession.EndLocal is computed from the machine's
+    // time zone, and without this the tests would depend on where they run.
     public static WorkSession At(DateTime local, int minutes, string type = "") => new()
     {
         EndUtc = local.ToUniversalTime(),

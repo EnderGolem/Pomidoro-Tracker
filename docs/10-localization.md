@@ -1,27 +1,27 @@
-# Языки
+# Languages
 
-Интерфейс есть на русском и английском. **Язык выбирается при сборке, а не во время
-работы:** выпускаются два отдельных `.exe`, и переключателя в настройках нет.
+The interface exists in Russian and English. **The language is chosen at build time, not at
+run time:** two separate `.exe` files are released, and there is no switch in the settings.
 
-Так решено сознательно. Выпадающий список языков в меню под шестерёнкой выглядел
-чужеродно, а две версии честнее: пользователь скачивает свою и не видит чужую.
-Побочная выгода — из кода ушёл весь механизм переключения на лету: события, подписки
-пяти моделей, настройка в базе и пересборка списков.
+This is a deliberate decision. A language drop-down in the menu under the gear looked
+out of place, and two versions are more honest: the user downloads their own and never sees the other.
+The side benefit is that the whole on-the-fly switching machinery left the code: events, the
+subscriptions of five models, a setting in the database and the rebuilding of lists.
 
-## Где лежат строки
+## Where the strings live
 
 ```
 Localization/
-├─ AppLanguage.cs      перечисление: Russian, English
-├─ Strings.cs          абстрактный список всего текста интерфейса
-├─ RussianStrings.cs   русские значения
-├─ EnglishStrings.cs   английские
-├─ Loc.cs              какой набор выбран этой сборкой
-└─ TextExtension.cs    запись {loc:Text Ключ} для разметки
+├─ AppLanguage.cs      enumeration: Russian, English
+├─ Strings.cs          abstract list of all UI text
+├─ RussianStrings.cs   Russian values
+├─ EnglishStrings.cs   English ones
+├─ Loc.cs              which set this build has chosen
+└─ TextExtension.cs    the {loc:Text Key} markup extension
 ```
 
-`Strings` — **абстрактный класс, а не словарь**. Это главное решение: забытую строку
-находит компилятор, а не пользователь, увидевший пустую подпись.
+`Strings` is **an abstract class, not a dictionary**. This is the key decision: a forgotten string
+is found by the compiler, not by a user who sees an empty label.
 
 ```csharp
 internal abstract class Strings
@@ -32,12 +32,12 @@ internal abstract class Strings
 }
 ```
 
-Добавил свойство в `Strings` — и оба наследника перестают компилироваться, пока не
-допишешь перевод.
+Add a property to `Strings`, and both subclasses stop compiling until
+you write the translation.
 
-## Как язык попадает в сборку
+## How the language gets into the build
 
-Весь выбор — четыре строки в `Localization/Loc.cs`:
+The whole choice is four lines in `Localization/Loc.cs`:
 
 ```csharp
 #if ENGLISH
@@ -47,8 +47,8 @@ internal abstract class Strings
 #endif
 ```
 
-Константу `ENGLISH` включает свойство `AppLanguage=en`, и делает это **цель** в
-`Pomidoro.csproj`, а не условный `PropertyGroup`:
+The `ENGLISH` constant is turned on by the `AppLanguage=en` property, and this is done by a **target** in
+`Pomidoro.csproj`, not by a conditional `PropertyGroup`:
 
 ```xml
 <Target Name="AddLanguageConstant" BeforeTargets="BeforeCompile" Condition="'$(AppLanguage)' == 'en'">
@@ -58,48 +58,48 @@ internal abstract class Strings
 </Target>
 ```
 
-Почему целью: свойство приходит из профиля публикации, а профиль импортируется
-**после** того, как тело `.csproj` уже вычислено. Условный `PropertyGroup` его
-просто не увидит — проверено, английская сборка выходила русской. Цель выполняется
-позже всех импортов и значение видит.
+Why a target: the property comes from the publish profile, and the profile is imported
+**after** the body of the `.csproj` has already been evaluated. A conditional `PropertyGroup`
+simply won't see it — this was verified, the English build came out Russian. A target runs
+after all the imports and does see the value.
 
-## Как строка попадает на экран
+## How a string gets onto the screen
 
-**В разметке** — через свою запись:
+**In markup** — through its own markup extension:
 
 ```xml
 <Button Content="{loc:Text StartButton}" />
 ```
 
-`TextExtension` разворачивает её в одноразовую привязку к `Loc.S`. Строку можно было
-бы подставить и напрямую, но привязка полезнее: опечатка в ключе видна в окне вывода
-как ошибка привязки, а не превращается молча в пустую подпись.
+`TextExtension` expands it into a one-time binding to `Loc.S`. The string could have been
+substituted directly, but a binding is more useful: a typo in the key shows up in the Output window
+as a binding error instead of silently turning into an empty label.
 
-**В коде** — через `Loc.S`:
+**In code** — through `Loc.S`:
 
 ```csharp
 PhaseText = Loc.S.PhaseIdle;
 CountText = Loc.S.Pomodoros(_sessions.Count);
 ```
 
-Никаких подписок и уведомлений: за время работы приложения язык не меняется.
+No subscriptions or notifications: the language does not change while the application is running.
 
-## Числа и даты не переводятся
+## Numbers and dates are not translated
 
-`Formatting/Format` остался только про числа и даты и работает в инвариантной культуре:
-`0.5`, `16.10`, `25:00`. Слово вокруг числа добавляет язык:
+`Formatting/Format` is now only about numbers and dates and works in the invariant culture:
+`0.5`, `16.10`, `25:00`. The word around the number is added by the language:
 
 ```csharp
-Loc.S.Hours(Format.HoursNumber(seconds))   // «3.2 часа» или «3.2 hours»
+Loc.S.Hours(Format.HoursNumber(seconds))   // "3.2 часа" or "3.2 hours"
 ```
 
-Дата так и показывается в европейском виде — `16.10.2026` — в обеих версиях.
-Приложение личное, формат привычен, а перевод дат удвоил бы тесты на форматирование
-без пользы.
+Dates are shown in the European form — `16.10.2026` — in both versions.
+The application is personal, the format is familiar, and translating dates would have doubled
+the formatting tests for no benefit.
 
-## Множественные числа
+## Plurals
 
-В русском три формы, в английском две, и правило живёт там же, где язык:
+Russian has three forms, English has two, and the rule lives where the language does:
 
 ```csharp
 // RussianStrings
@@ -116,43 +116,43 @@ private static string PomodoroWord(int count)
 }
 ```
 
-Это работает на двух языках и упрётся на четвёртом: в польском формы другие,
-в арабском их шесть. Правильный ответ на такой случай — ICU MessageFormat, где
-правила склонения лежат данными рядом с переводом, а не кодом. Пока языков два,
-овчинка выделки не стоит.
+This works for two languages and will hit a wall at the fourth: Polish has different forms,
+Arabic has six of them. The right answer for that case is ICU MessageFormat, where
+plural rules live as data next to the translation, not as code. While there are two languages,
+it isn't worth the effort.
 
-## Служебное имя типа закрыто в обоих языках
+## The reserved type name is closed in both languages
 
-`WorkTypes.ReservedNames` перечисляет «Без типа», «No type» и прочерк — **сразу оба
-языка, всегда**, хотя каждая сборка знает только свой. Это нужно, чтобы база,
-заведённая в английской версии, открывалась в русской без столкновения: тип с именем
-«No type» не должен слиться с корзиной для записей без типа.
+`WorkTypes.ReservedNames` lists «Без типа», "No type" and a dash — **both
+languages at once, always**, even though each build knows only its own. This is needed so that a database
+started in the English version opens in the Russian one without a collision: a type named
+"No type" must not merge with the bucket for entries without a type.
 
-Сами названия типов работы **не переводятся никогда**: это данные пользователя.
-«Созвон» остаётся «Созвоном» и в английской версии.
+The names of work types themselves are **never translated**: they are user data.
+«Созвон» ("call") stays «Созвон» in the English version too.
 
-## Что проверяют тесты
+## What the tests check
 
-`StringsTests` — 24 проверки:
+`StringsTests` — 24 checks:
 
-- ни одна подпись ни в одном языке не пустая (через рефлексию по всем свойствам);
-- у каждого периода есть своя, не повторяющаяся подпись;
-- склонения помидорок по русским и английским правилам;
-- «без типа» каждого языка попадает в запрещённые имена;
-- **каждый ключ `{loc:Text X}` из разметки существует в `Strings`.**
+- no label in either language is empty (via reflection over all properties);
+- every period has its own, non-repeating label;
+- pomodoro plurals follow the Russian and English rules;
+- each language's "no type" label is among the forbidden names;
+- **every `{loc:Text X}` key from the markup exists in `Strings`.**
 
-Последний — самый важный. Ключ в разметке остаётся строкой, и опечатку в нём
-компилятор не ловит; тест читает все файлы `Views/*.xaml` и сверяет ключи со списком
-свойств. Там же проверяется, что ключей нашлось больше сорока — иначе тест,
-не нашедший разметку, молча «проходил» бы всегда.
+The last one is the most important. A key in markup remains a string, and the compiler does not
+catch a typo in it; the test reads all `Views/*.xaml` files and checks the keys against the list
+of properties. It also checks that more than forty keys were found — otherwise a test
+that failed to find the markup would silently "pass" forever.
 
-Тесты **не знают, какой язык выбран сборкой**: там, где проверяется текст на экране,
-ожидание берётся из `Loc.S`, а не пишется литералом. Поэтому один и тот же набор
-проходит и для русской, и для английской сборки.
+The tests **don't know which language the build has chosen**: where on-screen text is checked,
+the expectation is taken from `Loc.S`, not written as a literal. That is why the same suite
+passes for both the Russian and the English build.
 
-## Добавить язык
+## Adding a language
 
-1. Новое значение в `AppLanguage`.
-2. Новый класс-наследник `Strings` — компилятор перечислит всё, что нужно перевести.
-3. Ветка `#elif` в `Loc.cs` и условие в цели `AddLanguageConstant`.
-4. Профиль публикации со своим `AppLanguage` и `PublishDir`.
+1. A new value in `AppLanguage`.
+2. A new `Strings` subclass — the compiler will list everything that needs translating.
+3. An `#elif` branch in `Loc.cs` and a condition in the `AddLanguageConstant` target.
+4. A publish profile with its own `AppLanguage` and `PublishDir`.

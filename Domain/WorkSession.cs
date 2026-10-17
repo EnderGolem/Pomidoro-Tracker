@@ -1,7 +1,7 @@
 namespace Pomidoro.Domain;
 
-// Завершённый рабочий промежуток — единственное, что попадает в историю.
-// Перерывы и паузы не сохраняются: важно только когда работа закончилась и сколько длилась.
+// A finished work interval is the only thing that goes into history.
+// Breaks and pauses aren't saved: all that matters is when the work ended and how long it took.
 internal sealed record WorkSession
 {
     public long Id { get; init; }
@@ -10,8 +10,8 @@ internal sealed record WorkSession
 
     public required int DurationSec { get; init; }
 
-    // Пустая строка — тип не проставлен. Хранится строкой, а не ссылкой на справочник:
-    // убранный из справочника тип должен оставаться в истории.
+    // An empty string means no type is set. Stored as a string, not a reference to the catalog:
+    // a type removed from the catalog must stay in history.
     public string Type { get; init; } = string.Empty;
 
     public DateTime EndLocal => EndUtc.ToLocalTime();

@@ -5,7 +5,7 @@
         <ResourceDictionary Source="Colors.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <!-- Кнопки «страница вверх/вниз» занимают всю дорожку, но ничего не рисуют -->
+    <!-- The "page up/down" buttons take up the whole track but draw nothing -->
     <Style x:Key="ScrollPageButton" TargetType="RepeatButton">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />

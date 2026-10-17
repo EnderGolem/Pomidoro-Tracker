@@ -1,19 +1,19 @@
-# Рецепты
+# Recipes
 
-Пошаговые разборы типичных изменений. Каждый рецепт показывает, какие файлы трогать
-и в каком порядке, — а заодно служит проверкой: если изменение требует правок
-в неожиданных местах, значит, что-то не так со слоями.
+Step-by-step walkthroughs of typical changes. Each recipe shows which files to touch
+and in what order — and also serves as a check: if a change requires edits
+in unexpected places, something is wrong with the layers.
 
-Общее правило: **начинай снизу**. Сначала домен и тест к нему, потом хранилище,
-потом модель представления, в последнюю очередь разметка.
+The general rule: **start from the bottom**. First the domain and a test for it, then the store,
+then the view model, and the markup last.
 
 ---
 
-## Добавить настройку
+## Add a setting
 
-Допустим, нужна галочка «не начинать отдых автоматически».
+Say you need a checkbox "don't start rest automatically".
 
-**1. `Storage/AppSettings.cs`** — ключ, поле, свойство:
+**1. `Storage/AppSettings.cs`** — key, field, property:
 
 ```csharp
 private const string AutoRestKey = "AutoRest";
@@ -27,15 +27,15 @@ public bool AutoRest
 }
 ```
 
-`Save` хранит `int`, поэтому для булева значения понадобится либо перегрузка,
-либо хранение `0`/`1`. Второе проще и не меняет схему.
+`Save` stores an `int`, so a boolean value needs either an overload
+or storing `0`/`1`. The latter is simpler and does not change the schema.
 
-В конструкторе — чтение: `_autoRest = store.GetSetting(AutoRestKey, 1) != 0;`
+In the constructor — reading: `_autoRest = store.GetSetting(AutoRestKey, 1) != 0;`
 
-**2. Домен** — если настройка меняет поведение таймера, она приходит параметром
-в `Start`, а не читается внутри. Домен не знает про `AppSettings`.
+**2. Domain** — if the setting changes the timer's behavior, it comes in as a parameter
+to `Start` rather than being read inside. The domain does not know about `AppSettings`.
 
-**3. `ViewModels/SettingsViewModel.cs`** — свойство для привязки:
+**3. `ViewModels/SettingsViewModel.cs`** — a property to bind to:
 
 ```csharp
 public bool AutoRest
@@ -45,10 +45,10 @@ public bool AutoRest
 }
 ```
 
-Сохранение произойдёт само, а `AppSettings.Changed` заставит открытый экран
-перечитаться.
+Saving happens by itself, and `AppSettings.Changed` makes the open screen
+reload.
 
-**4. `Views/SettingsView.xaml`** — элемент управления:
+**4. `Views/SettingsView.xaml`** — the control:
 
 ```xml
 <CheckBox Content="Отдых начинать вручную"
@@ -56,20 +56,20 @@ public bool AutoRest
           Margin="0,10,0,0" />
 ```
 
-Стиля для `CheckBox` в теме пока нет — встроенный в тёмном окне будет выглядеть чужим.
-Либо добавить стиль в `Themes/Inputs.xaml`, либо обойтись без флажка.
+There is no style for `CheckBox` in the theme yet — the built-in one will look foreign in a dark window.
+Either add a style to `Themes/Inputs.xaml`, or do without the checkbox.
 
-**5. Тест** — в `SqliteSessionStoreTests` достаточно проверить, что значение
-переживает переоткрытие базы.
+**5. Test** — in `SqliteSessionStoreTests` it is enough to check that the value
+survives reopening the database.
 
 ---
 
-## Добавить период в статистику
+## Add a statistics period
 
-Например, «последние 30 дней».
+For example, "last 30 days".
 
-**1. `Domain/StatsPeriod.cs`** — новое значение. Добавлять **в конец**: порядок
-значений задаёт порядок пунктов в списке.
+**1. `Domain/StatsPeriod.cs`** — a new value. Add it **at the end**: the order
+of values sets the order of items in the list.
 
 ```csharp
 internal enum StatsPeriod
@@ -82,7 +82,7 @@ internal enum StatsPeriod
 }
 ```
 
-**2. `Domain/StatsPeriods.cs`** — две ветки в `switch`:
+**2. `Domain/StatsPeriods.cs`** — two branches in the `switch`:
 
 ```csharp
 StatsPeriod.LastThirtyDays => new DayRange(today.AddDays(-29), today),
@@ -90,7 +90,7 @@ StatsPeriod.LastThirtyDays => new DayRange(today.AddDays(-29), today),
 StatsPeriod.LastThirtyDays => "Последние 30 дней",
 ```
 
-**3. Тест** в `StatsPeriodsTests`:
+**3. Test** in `StatsPeriodsTests`:
 
 ```csharp
 [Fact]
@@ -103,28 +103,28 @@ public void Last_thirty_days_ends_today()
 }
 ```
 
-**Всё.** Ни модель представления, ни разметку трогать не нужно: список периодов
-строится из `StatsPeriods.All`, а диаграмма сама подберёт ширину столбиков
-под новое количество дней.
+**That's it.** Neither the view model nor the markup needs to be touched: the period list
+is built from `StatsPeriods.All`, and the chart picks the bar width
+for the new number of days by itself.
 
-Это и есть проверка слоёв: изменение, которое выглядит как «про интерфейс»,
-полностью умещается в домене.
+This is the layer check in action: a change that looks like "a UI thing"
+fits entirely into the domain.
 
 ---
 
-## Добавить колонку в список записей
+## Add a column to the entry list
 
-Например, время начала (сейчас показывается только окончание).
+For example, the start time (right now only the end time is shown).
 
-**1. `Domain/WorkSession.cs`** — вычисляемое свойство, если данные уже есть:
+**1. `Domain/WorkSession.cs`** — a computed property, if the data is already there:
 
 ```csharp
 public DateTime StartLocal => EndLocal - Duration;
 ```
 
-Если данных нет — понадобится колонка в базе и миграция (см. следующий рецепт).
+If the data isn't there, you'll need a database column and a migration (see the next recipe).
 
-**2. `ViewModels/SessionRowViewModel.cs`** — готовая к показу строка:
+**2. `ViewModels/SessionRowViewModel.cs`** — a display-ready string:
 
 ```csharp
 StartTime = Format.TimeOfDay(session.StartLocal);
@@ -132,9 +132,9 @@ StartTime = Format.TimeOfDay(session.StartLocal);
 public string StartTime { get; }
 ```
 
-**3. `Views/SessionListView.xaml`** — колонка **в двух местах**: в заголовке
-и в шаблоне строки. Это единственное место, где приходится писать дважды,
-зато ширина задаётся один раз — через `SharedSizeGroup`:
+**3. `Views/SessionListView.xaml`** — the column goes **in two places**: in the header
+and in the row template. This is the only place where you have to write it twice,
+but the width is set once — via `SharedSizeGroup`:
 
 ```xml
 <ColumnDefinition Width="Auto" SharedSizeGroup="StartColumn" />
@@ -149,20 +149,20 @@ public string StartTime { get; }
            FontSize="13" VerticalAlignment="Center" Margin="0,0,12,0" />
 ```
 
-Не забудь сдвинуть `Grid.Column` у всех колонок правее.
+Don't forget to shift `Grid.Column` for all the columns to the right.
 
-**4. Тест** в `SessionRowViewModelTests` — что время начала считается от окончания
-минус длительность.
+**4. Test** in `SessionRowViewModelTests` — that the start time is computed as the end
+minus the duration.
 
 ---
 
-## Добавить поле в запись истории
+## Add a field to a history entry
 
-Самый дорогой рецепт: он затрагивает все слои. Допустим, нужна заметка к помидорке.
+The most expensive recipe: it touches every layer. Say you need a note on a pomodoro.
 
-**1. Схема, `Storage/SqliteSchema.cs`.** В `CREATE TABLE` добавляется колонка —
-но этого мало: у тех, кто уже пользуется приложением, таблица существует,
-и `CREATE TABLE IF NOT EXISTS` её не тронет. Нужна миграция, как у колонки `Type`:
+**1. Schema, `Storage/SqliteSchema.cs`.** A column is added to `CREATE TABLE` —
+but that is not enough: for those already using the application the table exists,
+and `CREATE TABLE IF NOT EXISTS` won't touch it. A migration is needed, as for the `Type` column:
 
 ```csharp
 if (!HasColumn(connection, "Note"))
@@ -171,87 +171,87 @@ if (!HasColumn(connection, "Note"))
 }
 ```
 
-Сейчас `HasTypeColumn` зашит под одну колонку. Если миграций станет две,
-правильнее завести `PRAGMA user_version` и список шагов, а не множить проверки.
+Right now `HasTypeColumn` is hard-wired to a single column. If there are two migrations,
+it is better to introduce `PRAGMA user_version` and a list of steps rather than multiply checks.
 
-**2. `Domain/WorkSession.cs`** — свойство:
+**2. `Domain/WorkSession.cs`** — a property:
 
 ```csharp
 public string Note { get; init; } = string.Empty;
 ```
 
-**3. `Storage/SqliteSessionStore.cs`** — три места: `INSERT`, `SELECT` в `GetRange`
-(не забыть индексы колонок в `reader.GetString(n)`) и, если заметку можно править,
-новый метод вроде `UpdateNote`, а заодно строка в `ISessionStore`.
+**3. `Storage/SqliteSessionStore.cs`** — three places: `INSERT`, `SELECT` in `GetRange`
+(don't forget the column indexes in `reader.GetString(n)`) and, if the note can be edited,
+a new method like `UpdateNote`, plus a line in `ISessionStore` to go with it.
 
-**4. `Fakes/FakeSessionStore.cs`** — та же операция для тестов.
+**4. `Fakes/FakeSessionStore.cs`** — the same operation for the tests.
 
-**5. Модель строки и разметка** — как в предыдущем рецепте.
+**5. Row model and markup** — as in the previous recipe.
 
-**6. Тесты** — в `SqliteSessionStoreTests` обязательно: что поле сохраняется,
-читается и переживает переоткрытие базы.
+**6. Tests** — in `SqliteSessionStoreTests`, necessarily: that the field is saved,
+read back and survives reopening the database.
 
 ---
 
-## Добавить надпись на экран
+## Add a label to the screen
 
-Любой новый текст идёт через `Strings`, литералов в разметке и моделях быть не должно.
+Any new text goes through `Strings`; there must be no literals in markup or models.
 
-**1. `Localization/Strings.cs`** — объявление:
+**1. `Localization/Strings.cs`** — the declaration:
 
 ```csharp
 public abstract string ExportButton { get; }
 ```
 
-С этой секунды проект **не собирается**, пока не переведены оба языка. Это и есть
-смысл абстрактного класса.
+From this moment the project **does not build** until both languages are translated. That is
+the whole point of the abstract class.
 
-**2. `RussianStrings.cs` и `EnglishStrings.cs`** — значения:
+**2. `RussianStrings.cs` and `EnglishStrings.cs`** — the values:
 
 ```csharp
 public override string ExportButton => "Выгрузить";
 public override string ExportButton => "Export";
 ```
 
-**3. Разметка** — через свою запись:
+**3. Markup** — through its own markup extension:
 
 ```xml
 <Button Content="{loc:Text ExportButton}" />
 ```
 
-В файле должно быть объявлено пространство имён:
+The file must declare the namespace:
 `xmlns:loc="clr-namespace:Pomidoro.Localization"`.
 
-**4. Или код** — через `Loc.S`:
+**4. Or code** — through `Loc.S`:
 
 ```csharp
 StatusText = Loc.S.ExportButton;
 ```
 
-Если текст складывается в свойство модели, модель обязана подписаться на
-`Loc.Current.LanguageChanged` и пересобрать его — иначе надпись останется на
-прежнем языке до перезагрузки экрана.
+If the text is assembled into a model property, the model must subscribe to
+`Loc.Current.LanguageChanged` and rebuild it — otherwise the label stays in
+the previous language until the screen is reloaded.
 
-**Текст с числом** объявляется методом, а не свойством:
+**Text with a number** is declared as a method, not a property:
 
 ```csharp
 public abstract string ExportedRows(int count);
 ```
 
-Число форматируется в инвариантной культуре через `string.Create(Culture, $"...")`.
+The number is formatted in the invariant culture via `string.Create(Culture, $"...")`.
 
-Тест писать не нужно: `StringsTests` сам проверит, что подпись не пустая ни в одном
-языке и что ключ из разметки существует.
+No test needs to be written: `StringsTests` checks by itself that the label is not empty in either
+language and that the key from the markup exists.
 
 ---
 
-## Изменить внешний вид
+## Change the look
 
-**Цвет** — только в `Themes/Colors.xaml`. Если нужного оттенка нет, добавь токен
-с ролевым именем (`WarningBrush`), а не `#FF8800` в разметке.
+**Color** — only in `Themes/Colors.xaml`. If the shade you need is missing, add a token
+with a role-based name (`WarningBrush`), not `#FF8800` in the markup.
 
-**Стиль кнопки, поля, списка** — в соответствующем словаре `Themes/`.
-Новый стиль лучше делать через `BasedOn`:
+**Style of a button, field, list** — in the corresponding dictionary in `Themes/`.
+A new style is best made via `BasedOn`:
 
 ```xml
 <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource FlatButton}">
@@ -259,43 +259,43 @@ public abstract string ExportedRows(int count);
 </Style>
 ```
 
-**Размер окна** — в `Views/MainWindow.xaml`. Диаграмма подстроится сама:
-её геометрия считается от фактического размера панели.
+**Window size** — in `Views/MainWindow.xaml`. The chart adapts by itself:
+its geometry is computed from the actual size of the panel.
 
-Если правишь словарь, который пользуется цветами, проверь, что в начале файла
-подключён `Colors.xaml` — иначе `StaticResource` не найдёт токен даже при том,
-что он есть на уровне приложения.
+If you edit a dictionary that uses colors, check that `Colors.xaml` is merged
+at the top of the file — otherwise `StaticResource` won't find the token even though
+it exists at the application level.
 
 ---
 
-## Отключить предупреждения-как-ошибки
+## Turn off warnings-as-errors
 
-Если правило мешает прямо сейчас и чинить его некогда:
+If a rule is in the way right now and there is no time to fix it:
 
 ```xml
 <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 ```
 
-Так себе решение. Лучше точечно: в `.editorconfig`, если правило не подходит проекту
-целиком, или `[SuppressMessage]` с объяснением, если случай единичный:
+A so-so solution. Better to be targeted: in `.editorconfig`, if the rule doesn't fit the project
+as a whole, or `[SuppressMessage]` with an explanation, if it is a one-off case:
 
 ```csharp
 [SuppressMessage("Design", "CA1031:Do not catch general exception types",
-    Justification = "Почему здесь это правильно")]
+    Justification = "Why this is the right thing here")]
 ```
 
-Пустое `Justification` хуже, чем отсутствие подавления: через полгода никто
-не вспомнит, что имелось в виду.
+An empty `Justification` is worse than no suppression at all: in half a year nobody
+will remember what was meant.
 
 ---
 
-## Посмотреть, что в базе
+## See what is in the database
 
-Шестерёнка → «SQL разработчика». Или любым клиентом SQLite по пути,
-который показан в верхней строке окна консоли.
+Gear → "Developer SQL". Or any SQLite client at the path
+shown in the top line of the console window.
 
-Запросы на каждый день — в [корневом README](../README.md#полезные-запросы).
+Everyday queries are in the [root README](../README.md#useful-queries).
 
-Если приложение запущено, помни: соединение одно и живёт в процессе. Сторонний
-клиент может не увидеть последних изменений до их фиксации, а длинная транзакция
-в клиенте заблокирует запись из приложения.
+If the application is running, keep in mind: there is one connection and it lives in the process. A third-party
+client may not see the latest changes until they are committed, and a long transaction
+in the client will block writes from the application.

@@ -1,47 +1,47 @@
-# Тесты
+# Tests
 
 ```
-dotnet test tests\Pomidoro.Tests\Pomidoro.Tests.csproj -c DebugLocal
+dotnet test tests\Pomidoro.Tests\Pomidoro.Tests.csproj -c Debug
 ```
 
-Сейчас 162 теста, проходят за полторы секунды. Ни один не ждёт настоящего времени,
-не трогает пользовательскую базу и не открывает окон.
+There are 162 tests right now, and they run in a second and a half. None of them waits
+for real time, touches the user's database or opens a window.
 
-## Что покрыто
+## What is covered
 
-| Файл | Тестов | О чём |
+| File | Tests | What about |
 |---|---|---|
-| `PomodoroTimerTests` | 11 | полный цикл, паузы, досрочная остановка, границы |
-| `DayBoundaryTests` | 9 | логический день, перенос ночной работы, зажим часа |
-| `StatsPeriodsTests` | 6 | недели с понедельника, месяцы, перечисление дней |
-| `WorkTypesTests` | 14 | приведение регистра, пустой тип, служебные имена обоих языков |
-| `StatsCalculatorTests` | 10 | итоги, дни, порядок типов, медиана, регистр |
-| `ChartLayoutTests` | 18 | шаг сетки, потолок оси, ширины, высоты |
-| `FormatTests` | 15 | циферблат, числа, даты, независимость от локали |
-| `StringsTests` | 24 | полнота обоих языков, склонения, ключи разметки |
-| `SqliteSessionStoreTests` | 23 | схема, выборки, правки, справочник, настройки, консоль |
-| `SessionRowViewModelTests` | 15 | правка минут и типа, откат мусора, отсутствие лишних записей |
-| `StatsViewModelTests` | 14 | легенда, период, диаграмма, правка и удаление строк |
-| `MainViewModelTests` | 3 | сборка экранов, запись помидорки, закрытие меню |
+| `PomodoroTimerTests` | 11 | full cycle, pauses, early stop, edge cases |
+| `DayBoundaryTests` | 9 | logical day, carrying night work over, clamping the hour |
+| `StatsPeriodsTests` | 6 | weeks starting on Monday, months, enumerating days |
+| `WorkTypesTests` | 14 | case normalization, empty type, reserved names in both languages |
+| `StatsCalculatorTests` | 10 | totals, days, type order, median, case |
+| `ChartLayoutTests` | 18 | grid step, axis ceiling, widths, heights |
+| `FormatTests` | 15 | clock face, numbers, dates, independence from the locale |
+| `StringsTests` | 24 | completeness of both languages, plural forms, markup keys |
+| `SqliteSessionStoreTests` | 23 | schema, queries, edits, catalog, settings, console |
+| `SessionRowViewModelTests` | 15 | editing minutes and type, rolling back garbage, no extra writes |
+| `StatsViewModelTests` | 14 | legend, period, chart, editing and deleting rows |
+| `MainViewModelTests` | 3 | assembling the screens, recording a pomodoro, closing the menu |
 
-Покрыты все слои, кроме разметки: домен, счёт статистики, геометрия, форматирование,
-хранилище и модели представления.
+Every layer except markup is covered: the domain, statistics calculation, geometry,
+formatting, the store and the view models.
 
-## Чего нет
+## What is not covered
 
-**Тестов разметки.** Проверять привязки автоматически можно, но для приложения
-такого размера это дороже, чем посмотреть глазами. Поэтому окна проверяются вручную
-(и через скрипты UI Automation, когда нужно убедиться, что ничего не отвалилось).
+**Markup tests.** Bindings can be checked automatically, but for an application
+this size that costs more than looking at it. So windows are checked by hand
+(and with UI Automation scripts when you need to make sure nothing fell off).
 
-**Отдельных тестов `TimerViewModel`.** Его собственная логика — пересказ домена
-в строки для экрана, а всё остальное проверяется со стороны `MainViewModelTests`:
-помидорка, запущенная командой и доведённая тикером до конца, доходит до хранилища.
+**Dedicated `TimerViewModel` tests.** Its own logic is retelling the domain
+as strings for the screen, and everything else is checked from `MainViewModelTests`:
+a pomodoro started by a command and driven to the end by the ticker reaches the store.
 
-**Тестов звука и трея.** Там нечего проверять без железа.
+**Sound and tray tests.** There is nothing to check there without hardware.
 
-## Подделки
+## Fakes
 
-Всё в `tests/Pomidoro.Tests/Fakes/`.
+Everything lives in `tests/Pomidoro.Tests/Fakes/`.
 
 ### `FakeTime`
 
@@ -57,28 +57,28 @@ internal sealed class FakeTime : TimeProvider
 }
 ```
 
-И настенные часы, и монотонный счётчик идут от одного поля, поэтому `Advance`
-двигает сразу всё. Часовой пояс — UTC, чтобы «сейчас» в тестах было предсказуемым.
+Both the wall clock and the monotonic counter run off the same field, so `Advance`
+moves everything at once. The time zone is UTC so that "now" in tests is predictable.
 
 ### `FakeTicker`
 
-Хранит, запущен ли он, и умеет `Fire()` — дёрнуть `Tick` вручную.
+Remembers whether it is running and can `Fire()` — raise `Tick` by hand.
 
 ### `FakeSessionStore`
 
-`ISessionStore` поверх трёх списков в памяти. Повторяет те правила хранилища,
-которые видны снаружи: присваивает `Id`, фильтрует по логическому дню, отбрасывает
-дубликаты типов без учёта регистра.
+`ISessionStore` on top of three in-memory lists. It repeats the store rules
+that are visible from outside: assigns `Id`, filters by logical day, drops
+duplicate types case-insensitively.
 
-Для проверок он ещё и запоминает, что с ним делали:
+For assertions it also records what was done to it:
 
 ```csharp
 public List<string> UpdatedTypes { get; } = [];
 public List<long> DeletedIds { get; } = [];
 ```
 
-Отсюда берётся, например, тест «показ строки ничего не пишет в базу»:
-после создания трёх строк `UpdatedTypes` обязан быть пустым.
+This is where, for example, the "showing a row writes nothing to the database" test
+comes from: after three rows are created, `UpdatedTypes` must be empty.
 
 ### `TestSessions`
 
@@ -91,15 +91,15 @@ public static WorkSession At(DateTime local, int minutes, string type = "") => n
 };
 ```
 
-Сессии задаются **локальным** временем и переводятся в UTC. Это важно: `WorkSession.EndLocal`
-считается по часовому поясу машины, и если задавать время сразу в UTC, тесты проходили бы
-в Москве и падали бы в Лондоне.
+Sessions are given in **local** time and converted to UTC. This matters: `WorkSession.EndLocal`
+is computed in the machine's time zone, and if the time were given in UTC directly, the tests
+would pass in Moscow and fail in London.
 
-## Как написано
+## How they are written
 
-### Имена
+### Names
 
-Имя теста — фраза на английском через подчёркивания, которая читается как утверждение:
+A test name is an English phrase joined with underscores that reads as a statement:
 
 ```
 Paused_time_does_not_count
@@ -107,10 +107,10 @@ Same_type_written_in_different_case_stays_one_type
 Garbage_rolls_back_to_the_previous_value
 ```
 
-В отчёте о прогоне такой список читается как описание поведения. Анализатор на имена
-с подчёркиваниями (CA1707) выключен для папки `tests/**` в `.editorconfig`.
+In a test run report such a list reads as a description of behavior. The analyzer for names
+with underscores (CA1707) is turned off for the `tests/**` folder in `.editorconfig`.
 
-### Один тест — одно утверждение о поведении
+### One test — one statement about behavior
 
 ```csharp
 [Fact]
@@ -118,7 +118,7 @@ public void Finished_work_is_recorded_with_its_planned_length_and_rest_starts()
 {
     _timer.Start(Work, Rest);
 
-    // Тик пришёл позже нуля, но в историю должно попасть ровно 25 минут.
+    // The tick came after zero, but exactly 25 minutes must go into the history.
     _time.Advance(Work + TimeSpan.FromMilliseconds(80));
     TimerStep step = _timer.Advance();
 
@@ -128,9 +128,9 @@ public void Finished_work_is_recorded_with_its_planned_length_and_rest_starts()
 }
 ```
 
-Несколько `Assert` в одном тесте допустимы, если они про одно и то же событие.
+Several `Assert`s in one test are fine if they are about the same event.
 
-### Таблицы вместо копипасты
+### Tables instead of copy-paste
 
 ```csharp
 [Theory]
@@ -144,24 +144,24 @@ public void Finished_work_is_recorded_with_its_planned_length_and_rest_starts()
 public void Pomodoros_follow_russian_rules(int count, string expected)
 ```
 
-### Тесты хранилища идут против настоящего SQLite
+### Store tests run against real SQLite
 
 ```csharp
 _path = Path.Combine(Path.GetTempPath(), "pomidoro-tests", Guid.NewGuid().ToString("N"), "test.db");
 _store = new SqliteSessionStore(_path);
 ```
 
-Каждый тест получает свою базу во временной папке и удаляет её в `Dispose`.
-Подделывать базу здесь было бы бессмысленно: проверяются как раз схема, формат дат,
-миграция и SQL — то, что в подделке пришлось бы выдумать заново.
+Each test gets its own database in a temporary folder and deletes it in `Dispose`.
+Faking the database here would be pointless: what is being checked is exactly the schema,
+the date format, the migration and the SQL — things a fake would have to invent anew.
 
-Именно эти тесты нашли, что соединение остаётся в пуле и не отпускает файл:
-удаление папки падало с «файл занят другим процессом». Лечится `Pooling=false`.
+It was these tests that found the connection staying in the pool and holding the file:
+deleting the folder failed with "the file is being used by another process". The cure is `Pooling=false`.
 
-### Проверки, независимые от среды
+### Environment-independent checks
 
-Там, где поведение зависит от часового пояса, проверяется не конкретное значение,
-а инвариант:
+Where behavior depends on the time zone, what is checked is not a specific value
+but an invariant:
 
 ```csharp
 DateTime start = boundary.StartUtc(day).ToLocalTime();
@@ -171,24 +171,24 @@ Assert.Equal(day, boundary.DayOf(start));
 Assert.Equal(day, boundary.DayOf(end));
 ```
 
-А независимость форматирования от локали проверяется прямо — подменой культуры:
+Independence of formatting from the locale is checked directly — by swapping the culture:
 
 ```csharp
 CultureInfo.CurrentCulture = new CultureInfo("ru-RU");
 Assert.Equal("18.6 часа", Format.Hours(66967));
 ```
 
-## Как добавить тест
+## How to add a test
 
-1. Файл кладётся в `tests/Pomidoro.Tests/`, имя — `ИмяТипаTests.cs`.
-2. Класс `public`, методы помечены `[Fact]` или `[Theory]`.
-3. Внутренние типы приложения видны благодаря `InternalsVisibleTo` в `Pomidoro.csproj` —
-   ничего дополнительно подключать не нужно.
-4. Если нужны время, тикер или хранилище — бери подделки из `Fakes/`, не настоящие.
-5. Если проверяешь что-то, что раньше было сломано, напиши в комментарии, что именно:
-   так тест не удалят через год как «странный».
+1. The file goes into `tests/Pomidoro.Tests/`, named `TypeNameTests.cs`.
+2. The class is `public`, methods are marked `[Fact]` or `[Theory]`.
+3. The application's internal types are visible thanks to `InternalsVisibleTo` in `Pomidoro.csproj` —
+   nothing else needs to be referenced.
+4. If you need time, a ticker or a store — take the fakes from `Fakes/`, not the real ones.
+5. If you are checking something that used to be broken, say exactly what in a comment:
+   that way the test won't be deleted a year later as "weird".
 
-Пример полного теста модели представления:
+An example of a complete view model test:
 
 ```csharp
 [Fact]
@@ -202,5 +202,5 @@ public void Click_leaves_only_the_type_that_was_clicked()
 }
 ```
 
-Проверяется сразу всё, что должен увидеть человек: состояние плашек, сумма часов
-и количество строк в списке.
+Everything a person should see is checked at once: the state of the legend chips, the total hours
+and the number of rows in the list.

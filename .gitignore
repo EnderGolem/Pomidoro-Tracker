@@ -7,7 +7,7 @@ TestResults/
 *.user
 *.suo
 
-# История помидорок — личные данные, не для репозитория
+# Pomodoro history is personal data, not for the repository
 pomodoro.db
 pomodoro.db-shm
 pomodoro.db-wal

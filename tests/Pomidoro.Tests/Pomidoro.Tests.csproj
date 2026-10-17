@@ -8,7 +8,7 @@
     <IsPackable>false</IsPackable>
     <AssemblyName>Pomidoro.Tests</AssemblyName>
     <RootNamespace>Pomidoro.Tests</RootNamespace>
-    <Configurations>Debug;DebugLocal;Release</Configurations>
+    <Configurations>Debug;Release</Configurations>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
   </PropertyGroup>

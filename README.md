@@ -1,57 +1,57 @@
-# Помидоро трекер
+# Pomodoro tracker
 
-Настольный таймер по технике помидора для Windows: работа → сигнал → отдых → сигнал.
-Каждый отработанный промежуток уходит в локальную базу SQLite, а потом показывается
-в статистике — по дням, по типам работы и одним числом за период.
+A desktop Pomodoro-technique timer for Windows: work → chime → rest → chime.
+Every interval you work goes into a local SQLite database and then shows up
+in the statistics — by day, by work type and as a single number for the period.
 
-WPF, .NET 9, одно окно, никакой сети и никаких аккаунтов. База лежит рядом с `.exe`.
-
----
-
-## Что умеет
-
-- **Таймер.** Длительности работы и отдыха задаются в минутах и запоминаются между запусками.
-  Пауза не идёт в зачёт. «Стоп» во время работы всё равно сохраняет отработанное.
-- **Сегодня.** Сумма часов, количество помидорок и список промежутков. Минуты и тип
-  правятся прямо в строке.
-- **Статистика.** Неделя или месяц, текущие или прошлые: диаграмма по дням с разбивкой
-  по типам, кнопки-фильтры под ней, медиана за день и полный список записей.
-- **Граница суток.** Ночная работа после полуночи может засчитываться во вчерашний день —
-  час переключения настраивается.
-- **Трей.** Крестик прячет окно, таймер продолжает идти, сигнал прозвучит в любом случае.
-- **SQL-консоль** для своих запросов к базе.
-- **Два языка.** Русский и английский — двумя отдельными сборками, без переключателя
-  в интерфейсе. База у них общая.
+WPF, .NET 9, one window, no network and no accounts. The database sits next to the `.exe`.
 
 ---
 
-## Сборка и запуск
+## Features
+
+- **Timer.** Work and rest durations are set in minutes and remembered between runs.
+  Paused time does not count. "Stop" during work still saves the time already worked.
+- **Today.** Total hours, number of pomodoros and the list of intervals. Minutes and type
+  can be edited right in the row.
+- **Statistics.** Current or previous week or month: a per-day chart broken down
+  by type, filter buttons under it, the daily median and the full list of entries.
+- **Day boundary.** Night work after midnight can count towards the previous day —
+  the switch-over hour is configurable.
+- **Tray.** The close button hides the window, the timer keeps running, and the chime plays regardless.
+- **SQL console** for your own queries against the database.
+- **Two languages.** Russian and English — as two separate builds, with no switch
+  in the interface. They share the same database.
+
+---
+
+## Building and running
 
 ```
-dotnet build Pomidoro.sln -c DebugLocal
-bin\DebugLocal\net9.0-windows\Pomidoro.exe
+dotnet build Pomidoro.sln -c Debug
+bin\Debug\net9.0-windows\Pomidoro.exe
 ```
 
-Конфигурации: `Debug`, `DebugLocal`, `Release`.
+Configurations: `Debug`, `Release`.
 
-Анализаторы .NET включены, а предупреждения считаются ошибками
-(`TreatWarningsAsErrors`), так что «собралось» означает «собралось начисто».
-Если это мешает — выключается одной строкой в `Pomidoro.csproj`.
+The .NET analyzers are enabled and warnings are treated as errors
+(`TreatWarningsAsErrors`), so "it builds" means "it builds cleanly".
+If that gets in the way, it is switched off with one line in `Pomidoro.csproj`.
 
-### Тесты
+### Tests
 
 ```
-dotnet test tests\Pomidoro.Tests\Pomidoro.Tests.csproj -c DebugLocal
+dotnet test tests\Pomidoro.Tests\Pomidoro.Tests.csproj -c Debug
 ```
 
-Сейчас их 162. Покрыты счётные и доменные части: машина состояний таймера, граница
-суток, разбор периодов, вся арифметика статистики, геометрия диаграммы, форматирование,
-нормализация типов, хранилище целиком (на настоящем SQLite во временном файле) и
-поведение моделей представления — включая правила легенды и правку строк списка.
+There are 162 of them right now. They cover the computational and domain parts: the timer
+state machine, the day boundary, period resolution, all of the statistics arithmetic, chart
+geometry, formatting, type normalization, the whole store (against real SQLite in a temporary
+file) and view model behaviour — including the legend rules and editing list rows.
 
-Разметка и сами окна тестами не покрыты: это проверяется глазами.
+Markup and the windows themselves are not covered by tests: they are checked by eye.
 
-### Публикация одним файлом
+### Single-file publishing
 
 ```
 dotnet publish -p:PublishProfile=SingleFile-Ru
@@ -59,231 +59,231 @@ dotnet publish -p:PublishProfile=SingleFile-En
 dotnet publish -p:PublishProfile=SingleFile-Framework
 ```
 
-| Профиль | Язык | Размер | Нужен .NET на машине |
+| Profile | Language | Size | Needs .NET on the machine |
 |---|---|---|---|
-| `SingleFile-Ru` | русский | ~72 МБ | нет |
-| `SingleFile-En` | английский | ~72 МБ | нет |
-| `SingleFile-Framework` | русский | ~2.4 МБ | да, .NET 9 Desktop Runtime |
+| `SingleFile-Ru` | Russian | ~72 MB | no |
+| `SingleFile-En` | English | ~72 MB | no |
+| `SingleFile-Framework` | Russian | ~2.4 MB | yes, .NET 9 Desktop Runtime |
 
-Результат — один `Pomidoro.exe` в `publish\ru\`, `publish\en\` или `publish\framework\`.
-База создаётся рядом с ним, а не во временной папке распаковки. Сжать self-contained
-сильнее не выйдет: `PublishTrimmed` с WPF не поддерживается, а сжатие уже включено.
+The result is a single `Pomidoro.exe` in `publish\ru\`, `publish\en\` or `publish\framework\`.
+The database is created next to it, not in the temporary extraction folder. The self-contained
+build cannot be squeezed further: `PublishTrimmed` is not supported with WPF, and compression is already on.
 
 ---
 
-## Как устроен код
+## How the code is organized
 
-> Здесь — обзор. Подробный разбор каждого слоя, журнал принятых решений и рецепты
-> типичных правок лежат в **[docs/](docs/README.md)**.
+> This is an overview. A detailed walkthrough of every layer, the decision log and recipes
+> for typical changes live in **[docs/](docs/README.md)**.
 
-Приложение разложено на слои: **домен → хранилище → модели представления → разметка**.
-Правило одно — стрелки идут только в одну сторону. Домен не знает про базу, база не знает
-про экраны, экраны не знают, откуда взялись данные.
+The application is split into layers: **domain → store → view models → markup**.
+There is one rule — the arrows only point one way. The domain knows nothing about the database,
+the database knows nothing about screens, and screens do not know where the data came from.
 
 ```
-App.xaml.cs            ← здесь всё собирается вместе: база, настройки, модели, окна, трей
+App.xaml.cs            ← everything is wired together here: database, settings, models, windows, tray
   │
-  ├─ Storage/          SQLite: схема, запись, чтение, настройки, консоль
-  ├─ Domain/           таймер, сутки, периоды, типы — чистая логика без WPF
-  ├─ Stats/            счёт статистики и геометрия диаграммы — тоже чистые функции
-  ├─ Formatting/       всё, что превращает числа и даты в текст на экране
-  ├─ Localization/     русский и английский текст интерфейса
-  ├─ ViewModels/       состояние экранов и команды кнопок
-  ├─ Views/            разметка: что где нарисовано
-  └─ Themes/           цвета и стили, ни одного цвета в самой разметке
+  ├─ Storage/          SQLite: schema, writing, reading, settings, console
+  ├─ Domain/           timer, days, periods, types — pure logic without WPF
+  ├─ Stats/            statistics and chart geometry — also pure functions
+  ├─ Formatting/       everything that turns numbers and dates into on-screen text
+  ├─ Localization/     Russian and English interface text
+  ├─ ViewModels/       screen state and button commands
+  ├─ Views/            markup: what is drawn where
+  └─ Themes/           colors and styles, not a single color in the markup itself
 ```
 
-### Где что лежит
+### Where things live
 
-| Файл | Что внутри |
+| File | What is inside |
 |---|---|
-| `App.xaml.cs` | точка входа и сборка приложения; трей, окна, аварийный выход |
-| `Domain/PomodoroTimer.cs` | машина состояний: работа → отдых → покой, паузы, досрочная остановка |
-| `Domain/DayBoundary.cs` | где кончаются одни сутки и начинаются следующие |
-| `Domain/DayRange.cs` | отрезок дней с перечислением и проверкой вхождения |
-| `Domain/StatsPeriods.cs` | «текущая неделя», «прошлый месяц» → конкретные даты |
-| `Domain/WorkTypes.cs` | приведение типа к написанию из справочника; запрещённые имена |
-| `Domain/WorkSession.cs` | запись истории: когда закончил, сколько длилась, какой тип |
-| `Stats/StatsCalculator.cs` | итоги, разбивка по дням и типам, медиана |
-| `Stats/ChartLayout.cs` | ширина столбика, шаг сетки, высота сегмента — в пикселях |
-| `Stats/TypePalette.cs` | какой тип каким цветом |
-| `Storage/SqliteSessionStore.cs` | единственная реализация хранилища |
-| `Storage/SqliteSchema.cs` | схема и миграция старых баз |
-| `Storage/AppSettings.cs` | настройки: читаются при старте, пишутся сразу при изменении |
-| `Formatting/Format.cs` | числа, минуты, даты, диапазоны — всегда в инвариантной культуре |
-| `Localization/Strings.cs` | весь текст интерфейса; наследники — русский и английский |
-| `Mvvm/` | базовый класс с уведомлениями, команды, источник тиков |
-| `ViewModels/MainViewModel.cs` | какой экран показан и кто перечитывает базу после правок |
-| `ViewModels/StatsViewModel.cs` | период, диаграмма, легенда, список за период |
-| `ViewModels/SessionRowViewModel.cs` | одна строка списка: правка минут и типа |
-| `Views/` | окна и экраны; в коде за разметкой только ввод с клавиатуры и размер панели |
+| `App.xaml.cs` | entry point and application wiring; tray, windows, crash exit |
+| `Domain/PomodoroTimer.cs` | state machine: work → rest → idle, pauses, early stop |
+| `Domain/DayBoundary.cs` | where one day ends and the next begins |
+| `Domain/DayRange.cs` | a range of days with enumeration and a containment check |
+| `Domain/StatsPeriods.cs` | "current week", "previous month" → concrete dates |
+| `Domain/WorkTypes.cs` | bringing a type to its spelling in the catalog; reserved names |
+| `Domain/WorkSession.cs` | a history entry: when it finished, how long it lasted, what type |
+| `Stats/StatsCalculator.cs` | totals, breakdown by day and type, median |
+| `Stats/ChartLayout.cs` | bar width, grid step, segment height — in pixels |
+| `Stats/TypePalette.cs` | which type gets which color |
+| `Storage/SqliteSessionStore.cs` | the only store implementation |
+| `Storage/SqliteSchema.cs` | schema and migration of old databases |
+| `Storage/AppSettings.cs` | settings: read at startup, written immediately on change |
+| `Formatting/Format.cs` | numbers, minutes, dates, ranges — always in the invariant culture |
+| `Localization/Strings.cs` | all interface text; the subclasses are Russian and English |
+| `Mvvm/` | base class with notifications, commands, tick source |
+| `ViewModels/MainViewModel.cs` | which screen is shown and who reloads the database after edits |
+| `ViewModels/StatsViewModel.cs` | period, chart, legend, list for the period |
+| `ViewModels/SessionRowViewModel.cs` | one list row: editing minutes and type |
+| `Views/` | windows and screens; code-behind holds only keyboard input and panel size |
 
-### Как данные доходят до экрана
+### How data reaches the screen
 
-Завершённая помидорка: `PomodoroTimer` отдаёт `WorkSession` → `TimerViewModel` сообщает
-наверх → `MainViewModel` кладёт её в базу и просит открытый экран перечитать себя.
+A finished pomodoro: `PomodoroTimer` hands out a `WorkSession` → `TimerViewModel` reports
+it upwards → `MainViewModel` puts it into the database and asks the open screen to reload itself.
 
-Экран статистики: `StatsViewModel.Reload()` берёт из базы сессии за период,
-`StatsCalculator` считает по ним итоги, дни и типы, `ChartLayout` переводит это
-в пиксели, и получившиеся списки показывает разметка. Ни одного вычисления
-в самой разметке нет — значит, всё это можно проверить тестом.
+The statistics screen: `StatsViewModel.Reload()` fetches the sessions for the period from the database,
+`StatsCalculator` computes totals, days and types from them, `ChartLayout` turns that
+into pixels, and the markup displays the resulting lists. There is not a single computation
+in the markup itself — which means all of it can be tested.
 
-### MVVM и три исключения
+### MVVM and three exceptions
 
-Поведение живёт в моделях представления, разметка только привязывается к их свойствам
-и командам. Код за разметкой пустой — кроме трёх мест, где без него нельзя:
+Behaviour lives in the view models; the markup only binds to their properties
+and commands. Code-behind is empty — except in three places where it cannot be avoided:
 
-- `SessionListView`, `SettingsView` — фильтр ввода (в поле минут пускаем только цифры)
-  и Enter в ячейке. Это обработка клавиатуры, а не логика.
-- `StatsView` — размер панели диаграммы. `ActualWidth` только для чтения, привязать
-  его к модели нечем.
-- `SqlWindow` — выделенный фрагмент запроса. `TextBox.SelectedText` не является
-  свойством зависимости.
-
----
-
-## Как работает таймер
-
-- **Пуск** — запускает работу. По её окончании звучит сигнал и сразу начинается отдых;
-  после отдыха — второй сигнал, и таймер возвращается в покой.
-- **Пауза** — замораживает отсчёт. Время на паузе **не** идёт в зачёт и нигде не сохраняется.
-- **Стоп** — сбрасывает таймер. Если оборвали работу, отработанное время всё равно уходит
-  в историю (всё, что дольше секунды).
-
-Отсчёт ведётся по меткам монотонного времени, а не по количеству тиков: при подтормаживании
-интерфейса таймер не уезжает. В историю записывается плановая длительность, а не измеренная,
-иначе в списке появлялись бы «25 минут и 80 миллисекунд».
-
-Время приходит в таймер через `TimeProvider` — поэтому в тестах полный цикл с паузами
-проверяется мгновенно, без единой настоящей секунды ожидания.
+- `SessionListView`, `SettingsView` — input filtering (only digits are allowed in the minutes field)
+  and Enter in a cell. This is keyboard handling, not logic.
+- `StatsView` — the size of the chart panel. `ActualWidth` is read-only, so there is
+  nothing to bind it to the model with.
+- `SqlWindow` — the selected fragment of the query. `TextBox.SelectedText` is not
+  a dependency property.
 
 ---
 
-## Граница суток
+## How the timer works
 
-По умолчанию сутки кончаются в полночь. Если работать ночью, удобнее передвинуть границу:
-при значении `4` всё, что закрыто до четырёх утра, попадает во вчерашний день.
+- **Start** — starts work. When it ends, a chime plays and rest begins immediately;
+  after rest comes a second chime, and the timer returns to idle.
+- **Pause** — freezes the countdown. Time spent paused does **not** count and is not saved anywhere.
+- **Stop** — resets the timer. If work was cut short, the time worked still goes
+  into the history (anything longer than a second).
 
-Поэтому выборки идут **по `EndUtc`**, а не по календарной дате: границу можно подвинуть
-в любой момент, и вся история тут же пересчитается под новое правило.
+The countdown is driven by monotonic time stamps, not by counting ticks: when the
+interface stutters, the timer does not drift. The history records the planned duration, not the measured one,
+otherwise the list would show "25 minutes and 80 milliseconds".
 
----
-
-## Типы работы
-
-Тип — это пометка «над чем работал». Он выбирается в строке списка из справочника,
-который настраивается под шестерёнкой.
-
-В записи тип лежит **обычной строкой**, а не ссылкой: убрать тип из справочника безопасно,
-из истории он никуда не денется — просто перестанет предлагаться для новых записей.
-Строка, которой проставлен выбывший тип, по-прежнему показывает его в своём списке,
-иначе выбор нельзя было бы вернуть.
-
-**Регистр.** Справочник не различает регистр: «созвон» и «СОЗВОН» — один тип. Проверка
-сделана в C#, а не констрейнтом `COLLATE NOCASE`: встроенный в SQLite `NOCASE` сворачивает
-только латиницу `A-Z` и кириллицу считает разными словами.
-
-Из этого следует правило для всей статистики: тип из записи приводится к написанию из
-справочника (`WorkTypes.Canonical`), и уже по нему идёт группировка. Иначе «Работа» и
-«работа» разъехались бы на две плашки в легенде, два цвета на диаграмме и два отдельных
-фильтра — при том что в списке обе строки выглядели бы одинаково. Саму историю приложение
-при этом не переписывает: в базе остаётся ровно то, что туда попало.
+Time reaches the timer through `TimeProvider` — so in tests a full cycle with pauses
+is checked instantly, without a single real second of waiting.
 
 ---
 
-## Статистика
+## Day boundary
 
-**Период** — текущая или прошлая неделя, текущий или прошлый месяц. Неделя начинается
-с понедельника.
+By default the day ends at midnight. If you work at night, it is handier to move the boundary:
+with a value of `4`, everything closed before four in the morning goes into the previous day.
 
-**Диаграмма.** Столбик на каждый день периода, включая пустые. Внутри столбика — сегменты
-по типам, самый длинный снизу. Потолок оси округляется вверх до круглого значения, чтобы
-верхняя линия сетки была подписана целым числом часов. Выходные приглушены.
-
-**Легенда** — это фильтр:
-
-- клик по типу оставляет **только его**;
-- клик по единственному включённому возвращает **все**;
-- **Shift+клик** добавляет или убирает один тип, не трогая остальные.
-
-Выключенные типы живут только в памяти: это взгляд на данные, а не настройка, и после
-перезапуска снова показано всё.
-
-**Медиана** считается по дням, **в которые была работа**. В месяце с шестью рабочими днями
-из тридцати медиана по всем дням всегда равнялась бы нулю и ничего бы не говорила.
+That is why queries go **by `EndUtc`** rather than by calendar date: the boundary can be moved
+at any moment, and the whole history is immediately recomputed under the new rule.
 
 ---
 
-## Окно и область уведомлений
+## Work types
 
-Крестик не закрывает приложение, а убирает окно в область уведомлений — на Windows 11
-значок обычно прячется под шевроном. Таймер продолжает идти, и сигнал прозвучит, даже
-если окно не на экране.
+A type is a "what was I working on" label. It is chosen in a list row from the catalog,
+which is configured under the gear.
 
-Вернуть окно — клик по значку. Правая кнопка открывает меню «Открыть» и «Выход»;
-по-настоящему завершает приложение только «Выход» и завершение сеанса Windows.
+In an entry the type is stored as **a plain string**, not a reference: removing a type from the catalog is safe,
+it does not disappear from the history — it simply stops being offered for new entries.
+A row tagged with a retired type still shows it in its drop-down,
+otherwise the choice could not be restored.
 
-При возврате из трея открытый экран перечитывается: окно могло провисеть там до следующего
-дня, и тогда «сегодня» уже другое.
+**Case.** The catalog is case-insensitive: «созвон» and «СОЗВОН» are one type. The check
+is done in C#, not with a `COLLATE NOCASE` constraint: SQLite's built-in `NOCASE` folds
+only Latin `A-Z` and treats Cyrillic in different case as different words.
 
-Настройки сохраняются сразу при изменении, поэтому аварийное завершение ничего не теряет.
+This gives a rule for all of the statistics: the type from an entry is brought to its spelling in
+the catalog (`WorkTypes.Canonical`), and grouping is done by that. Otherwise «Работа» and
+«работа» would split into two legend chips, two colors on the chart and two separate
+filters — even though both rows would look the same in the list. The application does
+not rewrite the history itself: the database keeps exactly what was put there.
 
 ---
 
-## Где лежат данные
+## Statistics
 
-Файл `pomodoro.db` рядом с `Pomidoro.exe`. Папку с приложением можно копировать целиком —
-история переедет вместе с ним. Бэкап = копия файла.
+**Period** — the current or previous week, the current or previous month. A week starts
+on Monday.
+
+**Chart.** A bar for every day of the period, including empty ones. Inside a bar there are segments
+by type, the longest at the bottom. The axis ceiling is rounded up to a round value so that
+the top grid line is labelled with a whole number of hours. Weekends are dimmed.
+
+**The legend** is a filter:
+
+- clicking a type keeps **only that one**;
+- clicking the only enabled type brings back **all of them**;
+- **Shift+click** adds or removes one type without touching the others.
+
+Disabled types live only in memory: this is a view of the data, not a setting, and after
+a restart everything is shown again.
+
+**The median** is computed over the days **on which there was work**. In a month with six working days
+out of thirty, a median over all days would always be zero and would say nothing.
+
+---
+
+## Window and notification area
+
+The close button does not quit the application; it moves the window into the notification area — on Windows 11
+the icon is usually hidden under the chevron. The timer keeps running, and the chime plays even
+if the window is not on screen.
+
+To bring the window back, click the icon. The right button opens a menu with "Open" and "Exit";
+only "Exit" and the end of the Windows session actually quit the application.
+
+When the window comes back from the tray, the open screen is reloaded: the window may have sat there until the next
+day, and then "today" is a different day.
+
+Settings are saved immediately on change, so a crash loses nothing.
+
+---
+
+## Where the data lives
+
+The `pomodoro.db` file next to `Pomidoro.exe`. The application folder can be copied as a whole —
+the history moves with it. Backup = a copy of the file.
 
 ```sql
 CREATE TABLE WorkSessions (
     Id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    EndUtc      TEXT    NOT NULL,            -- момент окончания в UTC, ISO 8601
-    LocalDate   TEXT    NOT NULL,            -- локальная дата окончания, 'ГГГГ-ММ-ДД'
-    DurationSec INTEGER NOT NULL,            -- чистое рабочее время в секундах, без пауз
-    Type        TEXT    NOT NULL DEFAULT ''  -- пометка пользователя, может быть пустой
+    EndUtc      TEXT    NOT NULL,            -- end moment in UTC, ISO 8601
+    LocalDate   TEXT    NOT NULL,            -- local end date, 'YYYY-MM-DD'
+    DurationSec INTEGER NOT NULL,            -- net work time in seconds, without pauses
+    Type        TEXT    NOT NULL DEFAULT ''  -- user label, may be empty
 );
 CREATE INDEX IX_WorkSessions_EndUtc ON WorkSessions (EndUtc);
 CREATE INDEX IX_WorkSessions_LocalDate ON WorkSessions (LocalDate);
 
 CREATE TABLE Settings (Key TEXT PRIMARY KEY, Value TEXT NOT NULL);
 
--- справочник типов: только подсказки для выпадающего списка, на историю не влияет
+-- type catalog: only suggestions for the drop-down, does not affect history
 CREATE TABLE TypeCatalog (Id INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL UNIQUE);
 ```
 
-`EndUtc` хранится в UTC, чтобы история не поехала при смене часового пояса. `LocalDate` —
-справочная колонка для ручных запросов: приложение по ней ничего не выбирает, потому что
-граница суток настраивается и могла переехать уже после записи.
+`EndUtc` is stored in UTC so that the history does not shift when the time zone changes. `LocalDate`
+is a reference column for manual queries: the application selects nothing by it, because
+the day boundary is configurable and may have moved after the entry was written.
 
-Колонка `Type` появилась позже остальных, поэтому при открытии старой базы она дописывается
-через `ALTER TABLE` — существующие записи получают пустую строку, ничего не теряется.
+The `Type` column appeared later than the rest, so when an old database is opened it is added
+via `ALTER TABLE` — existing entries get an empty string, nothing is lost.
 
-Сохраняется **только работа**. Перерывы и паузы в историю не пишутся.
+**Only work** is saved. Breaks and pauses are not written to the history.
 
 ---
 
-## SQL-консоль
+## SQL console
 
-Шестерёнка → «SQL разработчика». Запрос выполняется **в живое соединение приложения,
-без каких-либо проверок**: `DROP`, `DELETE` и `UPDATE` отработают как есть и историю
-не вернуть. Это инструмент для себя, а не функция для пользователя.
+Gear → "Developer SQL". The query runs **on the application's live connection,
+without any checks**: `DROP`, `DELETE` and `UPDATE` run as written, and the history
+cannot be brought back. This is a tool for yourself, not a user-facing feature.
 
-`F5` или `Ctrl+Enter` выполняют запрос; если есть выделение, выполняется только оно.
-Несколько операторов через `;` выполняются подряд. Вывод обрезается на 1000 строках.
+`F5` or `Ctrl+Enter` runs the query; if there is a selection, only the selection runs.
+Several statements separated by `;` run one after another. Output is cut off at 1000 rows.
 
-После каждого запроса открытый экран перечитывает базу. Если запрос снёс то, на чём
-экран держится, ошибка покажется в самой консоли — приложение из-за этого не падает.
+After every query the open screen reloads the database. If the query destroyed something
+the screen relies on, the error is shown in the console itself — the application does not crash because of it.
 
-### Полезные запросы
+### Useful queries
 
 ```sql
--- сколько часов за год
+-- hours per year
 SELECT ROUND(SUM(DurationSec) / 3600.0, 1) AS hours
 FROM WorkSessions
 WHERE LocalDate LIKE '2026%';
 
--- по месяцам
+-- by month
 SELECT substr(LocalDate, 1, 7)              AS month,
        COUNT(*)                             AS pomodoros,
        ROUND(SUM(DurationSec) / 3600.0, 1)  AS hours
@@ -291,24 +291,24 @@ FROM WorkSessions
 GROUP BY month
 ORDER BY month;
 
--- на что уходит время
-SELECT CASE WHEN Type = '' THEN '(без типа)' ELSE Type END AS type,
+-- where the time goes
+SELECT CASE WHEN Type = '' THEN '(no type)' ELSE Type END AS type,
        COUNT(*)                            AS pomodoros,
        ROUND(SUM(DurationSec) / 3600.0, 1) AS hours
 FROM WorkSessions
 GROUP BY lower(Type)
 ORDER BY hours DESC;
 
--- по дням недели: когда я вообще работаю
+-- by day of week: when do I actually work
 SELECT CASE CAST(strftime('%w', LocalDate) AS INTEGER)
-           WHEN 0 THEN 'вс' WHEN 1 THEN 'пн' WHEN 2 THEN 'вт' WHEN 3 THEN 'ср'
-           WHEN 4 THEN 'чт' WHEN 5 THEN 'пт' ELSE 'сб' END AS day,
+           WHEN 0 THEN 'Sun' WHEN 1 THEN 'Mon' WHEN 2 THEN 'Tue' WHEN 3 THEN 'Wed'
+           WHEN 4 THEN 'Thu' WHEN 5 THEN 'Fri' ELSE 'Sat' END AS day,
        ROUND(SUM(DurationSec) / 3600.0, 1) AS hours
 FROM WorkSessions
 GROUP BY strftime('%w', LocalDate)
 ORDER BY strftime('%w', LocalDate);
 
--- в какие часы суток заканчиваются помидорки
+-- at what hours of the day pomodoros finish
 SELECT strftime('%H', datetime(EndUtc, 'localtime')) AS hour, COUNT(*) AS n
 FROM WorkSessions
 GROUP BY hour
@@ -317,22 +317,22 @@ ORDER BY hour;
 
 ---
 
-## Решения, которые со стороны выглядят странно
+## Decisions that look odd from the outside
 
-- **WinForms в WPF-проекте.** Подключён только ради `NotifyIcon`: своего значка в трее
-  у WPF нет. Его неявные `using` отключены в `.csproj`, иначе `Button`, `TextBox` и
-  `MessageBox` из WinForms конфликтуют с одноимёнными типами WPF по всему коду.
-- **Значок и звук рисуются в памяти.** Ни `.ico`, ни `.wav` рядом с приложением не нужны,
-  и системные звуки пользователя ни при чём.
-- **`Pooling=false` в строке подключения.** Соединение одно и живёт всё время работы,
-  пулу выигрывать нечего. Зато с пулом `Dispose` не отпускает файл базы, и её нельзя
-  ни удалить, ни скопировать сразу после закрытия.
-- **Тип «Без типа» запрещён в справочнике.** Пустой тип и тип с таким названием —
-  разные вещи, и путать их в легенде не нужно.
-- **Удаление записи — без подтверждения.** Корзина появляется только при наведении
-  на строку, и это осознанный размен: диалог на каждую правку в списке раздражает сильнее.
+- **WinForms in a WPF project.** It is referenced only for `NotifyIcon`: WPF has no tray icon
+  of its own. Its implicit `using`s are disabled in the `.csproj`, otherwise `Button`, `TextBox` and
+  `MessageBox` from WinForms clash with the WPF types of the same name throughout the code.
+- **The icon and the sound are drawn in memory.** Neither an `.ico` nor a `.wav` needs to ship with the application,
+  and the user's system sounds play no part.
+- **`Pooling=false` in the connection string.** There is one connection, and it lives for the whole run,
+  so the pool has nothing to gain. With the pool, however, `Dispose` does not release the database file, and it can be
+  neither deleted nor copied right after closing.
+- **The "No type" name is forbidden in the catalog.** An empty type and a type with that name are
+  different things, and there is no need to confuse them in the legend.
+- **Deleting an entry asks for no confirmation.** The trash icon appears only when hovering
+  over a row, and this is a deliberate trade-off: a dialog on every edit in the list is more annoying.
 
-## Чего здесь нет
+## What is not here
 
-Синхронизации, аккаунтов, уведомлений, экспорта, тёмной и светлой темы на выбор,
-нескольких языков. Это личный инструмент на одну машину.
+Sync, accounts, notifications, export, a choice of dark and light themes,
+multiple languages. This is a personal tool for a single machine.

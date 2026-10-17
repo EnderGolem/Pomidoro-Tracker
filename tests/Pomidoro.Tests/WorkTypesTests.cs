@@ -32,8 +32,8 @@ public class WorkTypesTests
         Assert.Equal(string.Empty, WorkTypes.Canonical(stored, Catalog));
     }
 
-    // Служебные подписи закрыты в обоих языках сразу: тип, заведённый в английском
-    // интерфейсе, не должен столкнуться с корзиной «без типа» после переключения.
+    // Reserved labels are closed in both languages at once: a type created in the English
+    // UI must not collide with the "no type" bucket after a switch.
     [Theory]
     [InlineData("Без типа")]
     [InlineData("без типа")]

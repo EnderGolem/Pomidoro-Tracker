@@ -5,7 +5,7 @@ namespace Pomidoro.Tests;
 
 public class StatsPeriodsTests
 {
-    // 16.10.2026 — пятница.
+    // October 16, 2026 is a Friday.
     private static readonly DateOnly Friday = new(2026, 10, 16);
 
     [Fact]

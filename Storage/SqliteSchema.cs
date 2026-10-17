@@ -31,8 +31,8 @@ internal static class SqliteSchema
             create.ExecuteNonQuery();
         }
 
-        // Колонка Type появилась позже остальных, а CREATE TABLE IF NOT EXISTS
-        // в уже существующую таблицу её не добавит.
+        // The Type column appeared later than the others, and CREATE TABLE IF NOT EXISTS
+        // won't add it to an already existing table.
         if (HasTypeColumn(connection))
         {
             return;
@@ -52,7 +52,7 @@ internal static class SqliteSchema
 
         while (reader.Read())
         {
-            // Во второй колонке PRAGMA table_info лежит имя поля.
+            // The second column of PRAGMA table_info holds the column name.
             if (string.Equals(reader.GetString(1), "Type", StringComparison.OrdinalIgnoreCase))
             {
                 return true;

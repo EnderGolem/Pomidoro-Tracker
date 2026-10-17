@@ -1,6 +1,6 @@
 namespace Pomidoro.ViewModels;
 
-// Столбик одного дня: куски снизу вверх и подпись под осью.
+// One day's bar: segments from bottom to top and the label under the axis.
 internal sealed class ChartColumnViewModel
 {
     public required string Label { get; init; }

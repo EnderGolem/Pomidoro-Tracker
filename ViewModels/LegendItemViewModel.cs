@@ -2,7 +2,7 @@ using System.Windows.Media;
 
 namespace Pomidoro.ViewModels;
 
-// Кнопка-фильтр под диаграммой: тип, его цвет, часы и включён ли он в показ.
+// Filter button under the chart: the type, its color, hours and whether it's shown.
 internal sealed class LegendItemViewModel
 {
     public required string Type { get; init; }

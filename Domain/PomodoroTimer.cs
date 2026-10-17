@@ -104,8 +104,8 @@ internal sealed class PomodoroTimer
             return new TimerStep(TimerEvent.RestFinished, null);
         }
 
-        // Длительность берём плановую, а не измеренную: тик мог прийти на десятки
-        // миллисекунд позже нуля, и в истории это выглядело бы как 25:00,08.
+        // The planned duration is used, not the measured one: the tick may arrive tens of
+        // milliseconds after zero, and in history that would look like 25:00.08.
         WorkSession completed = NewSession(PhaseLength);
         EnterPhase(PomodoroPhase.Rest, _restLength);
 

@@ -4,8 +4,8 @@ using Pomidoro.Storage;
 
 namespace Pomidoro.Formatting;
 
-// Печать результата запроса моноширинной таблицей: колонки выравниваются по
-// самому длинному значению, несколько результатов разделяются заголовками.
+// Prints a query result as a monospace table: columns are aligned to
+// the longest value, multiple results are separated by headers.
 internal static class SqlResultText
 {
     public static string Status(SqlQueryResult result)

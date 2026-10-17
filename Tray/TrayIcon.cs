@@ -4,7 +4,7 @@ using Pomidoro.Localization;
 
 namespace Pomidoro.Tray;
 
-// Через значок в области уведомлений приложение живёт, когда окно закрыто крестиком.
+// The app lives on through the notification area icon while the window is closed.
 internal sealed class TrayIcon : IDisposable
 {
     private readonly NotifyIcon _notifyIcon;
@@ -56,7 +56,7 @@ internal sealed class TrayIcon : IDisposable
 
     private void OnMouseClick(object? sender, MouseEventArgs e)
     {
-        // Правую кнопку не трогаем — на ней контекстное меню.
+        // The right button is left alone: it opens the context menu.
         if (e.Button == MouseButtons.Left)
         {
             OpenRequested?.Invoke(this, EventArgs.Empty);

@@ -2,8 +2,8 @@ using Pomidoro.Domain;
 
 namespace Pomidoro.Storage;
 
-// Настройки читаются один раз при запуске и пишутся сразу при изменении,
-// поэтому терять их на аварийном выходе нечего.
+// Settings are read once at startup and written immediately on change,
+// so there is nothing to lose on a crash.
 internal sealed class AppSettings
 {
     public const int MinMinutes = 1;
@@ -13,7 +13,7 @@ internal sealed class AppSettings
 
     private const string WorkMinutesKey = "WorkMinutes";
 
-    // Ключ остался от прежнего названия фазы: в уже существующих базах лежит именно он.
+    // The key is left over from the phase's old name: existing databases store exactly this one.
     private const string RestMinutesKey = "BreakMinutes";
     private const string DayBoundaryKey = "DayBoundaryHour";
 

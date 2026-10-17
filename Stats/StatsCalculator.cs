@@ -2,8 +2,8 @@ using Pomidoro.Domain;
 
 namespace Pomidoro.Stats;
 
-// Весь счёт для экрана статистики: итоги, разбивка по дням и по типам, медиана.
-// Класс ничего не знает ни про базу, ни про интерфейс — его целиком покрывают тесты.
+// All the math for the statistics screen: totals, breakdown by day and by type, median.
+// The class knows nothing about the database or the UI, so tests cover it entirely.
 internal static class StatsCalculator
 {
     public static StatsSummary Build(
@@ -17,7 +17,7 @@ internal static class StatsCalculator
             .Select(session => new TypedSession(session, WorkTypes.Canonical(session.Type, typeCatalog)))
             .ToList();
 
-        // Легенда показывает все типы периода, даже выключенные, поэтому считается до фильтра.
+        // The legend shows all types of the period, even hidden ones, so it is built before the filter.
         IReadOnlyList<TypeTotal> allTypes = BuildTypeTotals(typed, typeCatalog);
 
         List<TypedSession> visible = typed
@@ -34,8 +34,8 @@ internal static class StatsCalculator
             allTypes);
     }
 
-    // Медиана считается только по дням, в которые была работа: иначе в месяце
-    // с шестью рабочими днями из тридцати она всегда равна нулю.
+    // The median counts only days that had work: otherwise in a month
+    // with six working days out of thirty it would always be zero.
     private static long? MedianOfWorkedDays(IReadOnlyList<DayTotal> days)
     {
         List<long> worked = days
@@ -56,8 +56,8 @@ internal static class StatsCalculator
             : (worked[middle - 1] + worked[middle]) / 2L;
     }
 
-    // Порядок типов: сначала как в справочнике, потом забытые типы по алфавиту,
-    // «без типа» всегда последним. От порядка зависит закреплённый за типом цвет.
+    // Type order: catalog order first, then forgotten types alphabetically,
+    // "no type" always last. The color assigned to a type depends on this order.
     private static List<TypeTotal> BuildTypeTotals(
         IReadOnlyList<TypedSession> typed,
         IReadOnlyList<string> typeCatalog)

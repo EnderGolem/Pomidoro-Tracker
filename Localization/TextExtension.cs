@@ -3,9 +3,9 @@ using System.Windows.Markup;
 
 namespace Pomidoro.Localization;
 
-// Короткая запись для разметки: {loc:Text StartButton}.
-// Возвращается привязка, а не готовая строка: так опечатка в ключе видна
-// как ошибка привязки в окне вывода, а не молча становится пустой подписью.
+// Short syntax for markup: {loc:Text StartButton}.
+// A binding is returned rather than a ready string: that way a typo in the key shows up
+// as a binding error in the Output window instead of silently becoming an empty label.
 internal sealed class TextExtension : MarkupExtension
 {
     public TextExtension(string key)

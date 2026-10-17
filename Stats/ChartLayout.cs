@@ -1,22 +1,22 @@
 namespace Pomidoro.Stats;
 
-// Геометрия диаграммы в пикселях. Отдельно от разметки, потому что иначе ширину
-// столбика и шаг сетки нельзя ни прочитать, ни проверить тестом.
+// Chart geometry in pixels. Kept apart from the markup because otherwise the bar width
+// and the grid step could be neither read nor tested.
 internal static class ChartLayout
 {
-    // Полоса слева под подписи часов. Та же цифра стоит отступом столбиков в разметке.
+    // Left strip for the hour labels. The same number is the bars' offset in the markup.
     public const double AxisWidth = 36.0;
 
     public const double MinColumnWidth = 7.0;
     public const double MaxColumnWidth = 46.0;
     public const double ColumnGap = 3.0;
 
-    // Чтобы совсем короткая сессия не выродилась в невидимую полоску.
+    // So that a very short session doesn't degenerate into an invisible sliver.
     public const double MinSegmentHeight = 2.0;
 
     public const double MinPlotHeight = 60.0;
 
-    // Сколько в панели занято не столбиками: отступы плюс подпись дня под осью.
+    // How much of the panel isn't taken by bars: paddings plus the day label under the axis.
     public const double ChartChrome = 46.0;
 
     private const int MaxGridLines = 4;
@@ -31,8 +31,8 @@ internal static class ChartLayout
 
     public static double PlotHeight(double hostHeight) => Math.Max(hostHeight - ChartChrome, MinPlotHeight);
 
-    // Потолок оси округляем до круглого значения — тогда верхняя линия сетки подписана
-    // целым числом часов и столбик читается по ней без наведения мышью.
+    // The axis ceiling is rounded to a round value, so the top grid line is labeled
+    // with a whole number of hours and a bar can be read against it without hovering.
     public static ChartScale Scale(long maxDaySeconds)
     {
         if (maxDaySeconds <= 0L)

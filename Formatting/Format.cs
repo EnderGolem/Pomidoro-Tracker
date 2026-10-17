@@ -3,13 +3,13 @@ using Pomidoro.Domain;
 
 namespace Pomidoro.Formatting;
 
-// Весь показ чисел и дат идёт через InvariantCulture: иначе на машине с другой
-// локалью разделитель дробной части и календарь меняются вместе с ней.
+// All numbers and dates are displayed via InvariantCulture: otherwise on a machine with another
+// locale the decimal separator and the calendar change along with it.
 internal static class Format
 {
     private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
 
-    // Секунды округляем вверх, чтобы сразу после старта на циферблате было ровно 25:00.
+    // Seconds are rounded up so the dial shows exactly 25:00 right after the start.
     public static string Clock(TimeSpan remaining)
     {
         TimeSpan rounded = TimeSpan.FromSeconds(Math.Ceiling(remaining.TotalSeconds));
@@ -37,7 +37,7 @@ internal static class Format
         ? range.From.ToString("dd.MM.yyyy", Culture)
         : DayAndMonth(range.From) + " — " + range.To.ToString("dd.MM.yyyy", Culture);
 
-    // Подпись на оси: при шаге меньше часа нужны десятые, иначе достаточно целых.
+    // Axis label: steps under an hour need tenths, otherwise whole numbers are enough.
     public static string AxisHours(double hours, double stepHours) =>
         hours.ToString(stepHours < 1.0 ? "0.##" : "0.#", Culture);
 }

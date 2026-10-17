@@ -5,8 +5,8 @@ using Pomidoro.Storage;
 
 namespace Pomidoro.ViewModels;
 
-// Один и тот же список используют оба экрана: «сегодня» показывает его без колонки
-// даты, статистика — с ней.
+// Both screens use the same list: "today" shows it without the date
+// column, statistics with it.
 internal sealed class SessionListViewModel : ObservableObject
 {
     private readonly ISessionStore _store;

@@ -3,8 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:loc="clr-namespace:Pomidoro.Localization">
 
-    <!-- Один список на оба экрана. Ширины колонок заданы один раз: заголовок и строки
-         связаны SharedSizeGroup, поэтому разъехаться они не могут. -->
+    <!-- One list for both screens. Column widths are set once: the header and the rows
+         are linked by SharedSizeGroup, so they can't drift apart. -->
     <Grid Grid.IsSharedSizeScope="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -44,7 +44,7 @@
                     <ItemsControl ItemsSource="{Binding Rows}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <!-- Background обязателен: без него наведение не ловится над пустотой -->
+                                <!-- Background is required: otherwise hover isn't caught over empty space -->
                                 <Grid x:Name="RowRoot" Margin="0,2" Background="Transparent">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" SharedSizeGroup="DateColumn" />

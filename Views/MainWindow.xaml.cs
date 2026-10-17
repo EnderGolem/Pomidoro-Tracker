@@ -2,8 +2,8 @@ using System.Windows;
 
 namespace Pomidoro.Views;
 
-// Окно одно на всё приложение, экраны внутри переключаются видимостью.
-// Всё поведение живёт в моделях представления, а окном управляет App.
+// One window for the whole app; the screens inside are switched by visibility.
+// All behavior lives in the view models, and App manages the window.
 public partial class MainWindow : Window
 {
     public MainWindow()

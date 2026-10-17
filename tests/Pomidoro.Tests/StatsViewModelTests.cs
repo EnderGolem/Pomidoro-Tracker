@@ -6,9 +6,9 @@ using Xunit;
 
 namespace Pomidoro.Tests;
 
-// Поведение легенды задано словами: обычный клик оставляет только нажатый тип,
-// повторный клик по единственному включённому возвращает все, Shift+клик
-// добавляет или убирает один.
+// Legend behavior is specified in words: a plain click keeps only the clicked type,
+// clicking the only visible type again brings back all, Shift+click
+// adds or removes one.
 public class StatsViewModelTests
 {
     private readonly FakeSessionStore _store = new();
@@ -111,8 +111,8 @@ public class StatsViewModelTests
         Assert.Equal(Loc.S.Hours("1.7"), _stats.Legend[0].Hours);
     }
 
-    // ComboBox сбрасывает выбор в null, когда теряет выбранный элемент из списка.
-    // Раньше это роняло экран: Reload() шёл за Period у пустого периода.
+    // ComboBox resets the selection to null when its selected item leaves the list.
+    // This used to crash the screen: Reload() dereferenced the null Period.
     [Fact]
     public void Period_cannot_be_dropped_to_nothing()
     {

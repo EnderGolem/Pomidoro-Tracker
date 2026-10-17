@@ -6,8 +6,8 @@ using Pomidoro.Storage;
 
 namespace Pomidoro.ViewModels;
 
-// Блок «сегодня»: часы сверху и список промежутков снизу. Дат нигде нет —
-// этот экран всегда про текущий логический день.
+// The "today" block: hours on top and the list of intervals below. No dates anywhere:
+// this screen is always about the current logical day.
 internal sealed class TodayViewModel : ObservableObject
 {
     private readonly ISessionStore _store;
@@ -54,8 +54,8 @@ internal sealed class TodayViewModel : ObservableObject
         UpdateTotals();
     }
 
-    // Список не перестраиваем: правка пришла из него самого, и строка под курсором
-    // уехала бы прямо во время редактирования.
+    // The list isn't rebuilt: the edit came from the list itself, and the row under the cursor
+    // would jump away right in the middle of editing.
     private void OnRowChanged(object? sender, SessionRowViewModel row)
     {
         int index = _sessions.FindIndex(session => session.Id == row.Id);

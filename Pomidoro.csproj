@@ -9,7 +9,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>Pomidoro</AssemblyName>
     <RootNamespace>Pomidoro</RootNamespace>
-    <Configurations>Debug;DebugLocal;Release</Configurations>
+    <Configurations>Debug;Release</Configurations>
     <NeutralLanguage>ru-RU</NeutralLanguage>
     <Version>1.0.0</Version>
   </PropertyGroup>
@@ -22,13 +22,13 @@
   </PropertyGroup>
 
   <!--
-    Язык выбирается при сборке: AppLanguage=en даёт английскую версию.
-    Переключателя во время работы нет, русская и английская выпускаются
-    отдельными файлами.
+    The language is chosen at build time: AppLanguage=en produces the English version.
+    There is no runtime switch; the Russian and English versions ship as
+    separate files.
 
-    Константа добавляется целью, а не условным PropertyGroup: свойство может
-    прийти из профиля публикации, а профиль импортируется уже после того,
-    как тело .csproj вычислено. Цель выполняется позже импортов и видит его.
+    The constant is added by a target, not by a conditional PropertyGroup: the property may
+    come from a publish profile, and the profile is imported only after
+    the .csproj body has been evaluated. The target runs after the imports and sees it.
   -->
   <Target Name="AddLanguageConstant" BeforeTargets="BeforeCompile" Condition="'$(AppLanguage)' == 'en'">
     <PropertyGroup>
@@ -36,18 +36,11 @@
     </PropertyGroup>
   </Target>
 
-  <PropertyGroup Condition="'$(Configuration)' == 'DebugLocal'">
-    <DefineConstants>$(DefineConstants);DEBUG;DEBUG_LOCAL</DefineConstants>
-    <DebugType>portable</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-    <Optimize>false</Optimize>
-  </PropertyGroup>
-
   <ItemGroup>
     <!--
-      WinForms подключён только ради NotifyIcon: своего значка в трее у WPF нет.
-      Неявные using-и WinForms сняты, иначе его Button, TextBox и MessageBox
-      конфликтуют с одноимёнными типами WPF по всему проекту.
+      WinForms is referenced only for NotifyIcon: WPF has no tray icon of its own.
+      WinForms implicit usings are removed, otherwise its Button, TextBox and MessageBox
+      conflict with the same-named WPF types throughout the project.
     -->
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />

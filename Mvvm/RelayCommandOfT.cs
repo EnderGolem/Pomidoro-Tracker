@@ -11,8 +11,8 @@ internal sealed class RelayCommand<T> : ICommand
         _execute = execute;
     }
 
-    // Доступность такой команды зависит только от того, пришёл ли параметр нужного типа,
-    // поэтому пересчитывать её некогда и подписка никому не нужна.
+    // Whether such a command can execute depends only on whether the parameter has the right type,
+    // so there is never a moment to re-evaluate it and nobody needs the subscription.
     public event EventHandler? CanExecuteChanged
     {
         add { }

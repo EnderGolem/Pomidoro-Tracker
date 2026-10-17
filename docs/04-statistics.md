@@ -1,10 +1,10 @@
-# Статистика
+# Statistics
 
-Папка `Stats/` отвечает на два вопроса: **что показывать** (`StatsCalculator`)
-и **какого размера это рисовать** (`ChartLayout`). Оба класса — чистые функции:
-на вход данные, на выход данные, ни базы, ни экрана.
+The `Stats/` folder answers two questions: **what to show** (`StatsCalculator`)
+and **how big to draw it** (`ChartLayout`). Both classes are pure functions:
+data in, data out, no database and no screen.
 
-## Типы результата
+## Result types
 
 ```csharp
 internal sealed record TypeTotal(string Type, string Display, long Seconds);
@@ -26,11 +26,11 @@ internal sealed record StatsSummary(
 }
 ```
 
-`Type` — канонический ключ (пустая строка = тип не проставлен), `Display` — то,
-что видит человек («Без типа» вместо пустоты). Хранить оба поля дешевле, чем
-подставлять подпись в пяти местах и однажды забыть.
+`Type` is the canonical key (an empty string means no type was set), `Display` is
+what a person sees ("No type" instead of nothing). Storing both fields is cheaper than
+substituting the label in five places and forgetting one some day.
 
-## `StatsCalculator.Build` по шагам
+## `StatsCalculator.Build` step by step
 
 ```csharp
 public static StatsSummary Build(
@@ -41,7 +41,7 @@ public static StatsSummary Build(
     IReadOnlySet<string> hiddenTypes)
 ```
 
-**Шаг 1. Приведение типов.** Каждая запись получает канонический тип:
+**Step 1. Normalizing types.** Every record gets its canonical type:
 
 ```csharp
 List<TypedSession> typed = sessions
@@ -49,29 +49,30 @@ List<TypedSession> typed = sessions
     .ToList();
 ```
 
-С этого момента «Работа» и «работа» — один и тот же ключ. Почему это важно,
-расписано в [02-domain.md](02-domain.md#приведение-к-написанию-из-справочника).
+From this point on «Работа» and «работа» are one and the same key. Why that matters
+is explained in [02-domain.md](02-domain.md#normalizing-to-the-catalog-spelling).
 
-**Шаг 2. Типы для легенды — до фильтра.**
+**Step 2. Legend types — before the filter.**
 
 ```csharp
 IReadOnlyList<TypeTotal> allTypes = BuildTypeTotals(typed, typeCatalog);
 ```
 
-Легенда показывает **все** типы периода, включая выключенные: иначе выключенный тип
-исчез бы с экрана и включить его обратно было бы нечем.
+The legend shows **all** types of the period, including the disabled ones: otherwise
+a disabled type would vanish from the screen and there would be nothing to click
+to bring it back.
 
-**Шаг 3. Фильтр.** Из дальнейшего счёта уходят записи скрытых типов:
+**Step 3. Filter.** Records of hidden types drop out of further counting:
 
 ```csharp
 List<TypedSession> visible = typed.Where(item => !hiddenTypes.Contains(item.Type)).ToList();
 ```
 
-`hiddenTypes` приходит с компаратором без учёта регистра (`WorkTypes.NewSet()`),
-поэтому выключение типа гасит все его написания разом.
+`hiddenTypes` comes with a case-insensitive comparer (`WorkTypes.NewSet()`),
+so disabling a type hides all of its spellings at once.
 
-**Шаг 4. Дни.** `BuildDays` раскладывает видимые записи по логическим дням
-и перебирает **все** дни отрезка, а не только те, где была работа:
+**Step 4. Days.** `BuildDays` distributes the visible records over logical days
+and walks **every** day of the range, not only the days with work:
 
 ```csharp
 ILookup<DateOnly, TypedSession> byDay = visible.ToLookup(item => boundary.DayOf(item.Session.EndLocal));
@@ -88,11 +89,11 @@ foreach (DateOnly day in range.EnumerateDays())
 }
 ```
 
-Пустой день даёт `DayTotal` с нулём и пустым списком — на диаграмме он занимает
-своё место на оси. Сегменты внутри дня сортируются от самого длинного к короткому,
-чтобы крупные куски были снизу и столбик не рябил.
+An empty day yields a `DayTotal` with zero and an empty list — on the chart it keeps
+its place on the axis. Segments within a day are sorted from longest to shortest,
+so the big pieces sit at the bottom and the column does not look striped.
 
-**Шаг 5. Итоги и медиана.**
+**Step 5. Totals and median.**
 
 ```csharp
 return new StatsSummary(
@@ -103,10 +104,10 @@ return new StatsSummary(
     allTypes);
 ```
 
-Приведение к `long` в сумме не случайно: `DurationSec` — `int`, и за несколько лет
-сумма секунд вышла бы за его границы.
+The cast to `long` in the sum is not accidental: `DurationSec` is an `int`, and over
+a few years the sum of seconds would overflow it.
 
-## Порядок типов и цвета
+## Type order and colours
 
 ```csharp
 List<string> ordered =
@@ -123,13 +124,13 @@ if (seconds.ContainsKey(string.Empty))
 }
 ```
 
-Порядок такой:
+The order is:
 
-1. типы из справочника — в порядке справочника (то есть добавления);
-2. типы, которых в справочнике уже нет, — по алфавиту;
-3. «без типа» — всегда последним.
+1. types from the catalog — in catalog order (that is, order of addition);
+2. types no longer in the catalog — alphabetically;
+3. the "no type" bucket — always last.
 
-Порядок важен не только для вида: **цвет закрепляется за номером в этом списке**.
+The order matters for more than looks: **a colour is bound to the position in this list**.
 
 ```csharp
 public static Brush For(string canonicalType, int index) => canonicalType.Length == 0
@@ -137,15 +138,15 @@ public static Brush For(string canonicalType, int index) => canonicalType.Length
     : Palette[index % Palette.Length];
 ```
 
-Палитра — восемь цветов, «без типа» всегда серый и в палитре не участвует.
-Если бы порядок был по сумме часов, цвет типа прыгал бы при каждом переключении
-периода; если бы по алфавиту — перекрашивался бы при добавлении нового типа.
-Порядок справочника устойчив к обоим случаям.
+The palette has eight colours; "no type" is always grey and does not take part in it.
+If the order were by total hours, a type's colour would jump every time the period
+changes; if alphabetical, it would repaint whenever a new type is added.
+Catalog order is stable against both.
 
-Кисти создаются один раз и замораживаются (`Freeze()`): замороженную кисть WPF
-не копирует на каждую привязку и может использовать из любого потока.
+Brushes are created once and frozen (`Freeze()`): WPF does not copy a frozen brush
+for every binding and can use it from any thread.
 
-## Медиана
+## Median
 
 ```csharp
 private static long? MedianOfWorkedDays(IReadOnlyList<DayTotal> days)
@@ -165,35 +166,35 @@ private static long? MedianOfWorkedDays(IReadOnlyList<DayTotal> days)
 }
 ```
 
-Два решения:
+Two decisions:
 
-- **Считаются только дни, в которые была работа.** В месяце с шестью рабочими днями
-  из тридцати медиана по всем дням всегда равна нулю и не говорит ничего.
-  Вопрос спорный — но «сколько я обычно работаю в рабочий день» полезнее,
-  чем «сколько я работаю в среднем по календарю».
-- **Возвращается `long?`, а не ноль.** Ноль — законное значение: длительность записи
-  можно поправить на 0 минут. Поэтому «данных нет» и «вышло ноль» различаются типом,
-  а не значением. На экране `null` означает, что подписи про медиану просто нет.
+- **Only days with work are counted.** In a month with six working days out of thirty,
+  the median over all days is always zero and says nothing.
+  It is debatable — but "how much do I usually work on a working day" is more useful
+  than "how much do I work on average per calendar day".
+- **It returns `long?`, not zero.** Zero is a legitimate value: a record's duration
+  can be corrected to 0 minutes. So "no data" and "came out as zero" are told apart by type,
+  not by value. On screen, `null` means the median caption simply is not shown.
 
-При чётном количестве дней берётся среднее двух средних, целочисленным делением —
-разница в полсекунды на экране всё равно не видна.
+With an even number of days, the mean of the two middle values is taken using integer
+division — a half-second difference is invisible on screen anyway.
 
-## Геометрия диаграммы
+## Chart geometry
 
-`ChartLayout` переводит секунды и доступное место в пиксели. Константы:
+`ChartLayout` turns seconds and available space into pixels. Constants:
 
-| Константа | Значение | Что это |
+| Constant | Value | What it is |
 |---|---|---|
-| `AxisWidth` | 36 | полоса слева под подписи часов |
-| `ChartChrome` | 46 | что занято не столбиками: отступы и подпись дня |
-| `MinPlotHeight` | 60 | ниже этого поле под столбики не сжимается |
-| `MinColumnWidth` | 7 | уже — в столбик не попасть мышью |
-| `MaxColumnWidth` | 46 | шире — столбики превращаются в ломти |
-| `ColumnGap` | 3 | зазор между столбиками |
-| `MinSegmentHeight` | 2 | чтобы короткая сессия не стала невидимой |
-| `MaxGridLines` | 4 | сколько шагов сетки допустимо |
+| `AxisWidth` | 36 | strip on the left for the hour labels |
+| `ChartChrome` | 46 | space not taken by columns: padding and the day label |
+| `MinPlotHeight` | 60 | the plot area does not shrink below this |
+| `MinColumnWidth` | 7 | any narrower and the column is hard to hit with the mouse |
+| `MaxColumnWidth` | 46 | any wider and columns turn into slabs |
+| `ColumnGap` | 3 | gap between columns |
+| `MinSegmentHeight` | 2 | so a short session does not become invisible |
+| `MaxGridLines` | 4 | how many grid steps are allowed |
 
-### Ширина столбика
+### Column width
 
 ```csharp
 public static double ColumnWidth(double plotWidth, int days) => days <= 0
@@ -201,11 +202,11 @@ public static double ColumnWidth(double plotWidth, int days) => days <= 0
     : Math.Clamp(plotWidth / days - ColumnGap, MinColumnWidth, MaxColumnWidth);
 ```
 
-Доступное место делится на количество дней. Если дней много (месяц в узком окне),
-ширина упирается в минимум, суммарная ширина превышает панель и появляется
-горизонтальная прокрутка — так задумано.
+The available space is divided by the number of days. If there are many days (a month
+in a narrow window), the width hits the minimum, the total width exceeds the panel and
+horizontal scrolling appears — this is intended.
 
-### Шаг сетки и потолок оси
+### Grid step and axis ceiling
 
 ```csharp
 private static readonly double[] GridSteps = [0.25, 0.5, 1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0, 24.0];
@@ -226,23 +227,23 @@ public static ChartScale Scale(long maxDaySeconds)
 }
 ```
 
-Берётся первый шаг из списка, при котором линий выходит не больше четырёх,
-а потолок округляется вверх до целого числа шагов. Благодаря этому верхняя линия
-всегда подписана круглым числом часов, и высоту столбика можно прочитать по сетке,
-не наводя мышь.
+The first step in the list that yields no more than four lines is taken, and the ceiling
+is rounded up to a whole number of steps. Thanks to this the top line is always labelled
+with a round number of hours, and a column's height can be read off the grid without
+hovering the mouse.
 
-Примеры:
+Examples:
 
-| Самый длинный день | Шаг | Потолок | Линии |
+| Longest day | Step | Ceiling | Lines |
 |---|---|---|---|
-| 30 минут | 0.25 ч | 0.5 ч | 0 · 0.25 · 0.5 |
-| 3 часа | 1 ч | 3 ч | 0 · 1 · 2 · 3 |
-| 5 ч 17 мин | 2 ч | 6 ч | 0 · 2 · 4 · 6 |
-| 23 часа | 6 ч | 24 ч | 0 · 6 · 12 · 18 · 24 |
+| 30 minutes | 0.25 h | 0.5 h | 0 · 0.25 · 0.5 |
+| 3 hours | 1 h | 3 h | 0 · 1 · 2 · 3 |
+| 5 h 17 min | 2 h | 6 h | 0 · 2 · 4 · 6 |
+| 23 hours | 6 h | 24 h | 0 · 6 · 12 · 18 · 24 |
 
-Пустой период даёт `ChartScale.Empty`, и сетка не рисуется вовсе.
+An empty period yields `ChartScale.Empty`, and no grid is drawn at all.
 
-### Высоты
+### Heights
 
 ```csharp
 public static double SegmentHeight(long seconds, ChartScale scale, double plotHeight) => scale.IsEmpty
@@ -254,38 +255,39 @@ public static double GridLineTop(double hours, ChartScale scale, double plotHeig
     : plotHeight - hours / scale.MaxHours * plotHeight;
 ```
 
-Высота сегмента — его доля от потолка оси. Нижняя линия сетки (ноль часов) оказывается
-внизу поля, верхняя — наверху: в WPF начало координат сверху, поэтому высота вычитается.
+A segment's height is its share of the axis ceiling. The bottom grid line (zero hours)
+ends up at the bottom of the plot and the top line at the top: in WPF the origin is
+at the top, so the height is subtracted.
 
-Минимальная высота сегмента в 2 пикселя — приближение: если в одном дне окажется
-два десятка крошечных сессий разных типов, суммарная высота столбика слегка превысит
-расчётную. На практике типов единицы, и это незаметно.
+The 2-pixel minimum segment height is an approximation: if a single day holds a couple
+of dozen tiny sessions of different types, the column's total height will slightly exceed
+the computed one. In practice there are only a handful of types, and it is unnoticeable.
 
-### Размер панели
+### Panel size
 
 ```csharp
 public static double PlotWidth(double hostWidth) => Math.Max(hostWidth - AxisWidth, 0.0);
 public static double PlotHeight(double hostHeight) => Math.Max(hostHeight - ChartChrome, MinPlotHeight);
 ```
 
-Размер приходит из разметки — это единственная часть диаграммы, которую нельзя
-посчитать заранее. Как именно он туда попадает, описано в
-[05-ui.md](05-ui.md#размер-панели-диаграммы).
+The size comes from the markup — it is the only part of the chart that cannot be
+computed in advance. How exactly it gets there is described in
+[05-ui.md](05-ui.md#chart-panel-size).
 
-## Что считается при каких действиях
+## What gets recomputed on which action
 
-Пересчёт разделён на три уровня, чтобы не делать лишней работы:
+Recomputation is split into three levels to avoid unnecessary work:
 
-| Действие | Запрос к базе | Пересчёт статистики | Пересборка списка строк |
+| Action | Database query | Statistics recomputed | Row list rebuilt |
 |---|---|---|---|
-| Открыли экран, сменили период | да | да | да |
-| Клик по плашке легенды | нет | да | да |
-| Правка минут или типа в строке | нет | да | **нет** |
-| Изменение размера окна | нет | нет | нет |
+| Screen opened, period changed | yes | yes | yes |
+| Legend chip clicked | no | yes | yes |
+| Minutes or type edited in a row | no | yes | **no** |
+| Window resized | no | no | no |
 
-Последняя строка — важная: при перетаскивании рамки окна событие размера приходит
-десятки раз в секунду, и раньше каждое из них тянуло запрос к базе и пересборку
-легенды. Сейчас меняется только геометрия (`SetPlotSize` → `BuildChart`).
+The last row is important: while the window frame is being dragged, the size event fires
+dozens of times per second, and each one used to trigger a database query and a legend
+rebuild. Now only the geometry changes (`SetPlotSize` → `BuildChart`).
 
-Предпоследняя тоже: список не перестраивается после правки, иначе строка уехала бы
-из-под курсора прямо во время редактирования.
+The second-to-last one too: the list is not rebuilt after an edit, otherwise the row
+would slide out from under the cursor right in the middle of editing.

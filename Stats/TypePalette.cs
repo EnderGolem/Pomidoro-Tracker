@@ -2,8 +2,8 @@ using System.Windows.Media;
 
 namespace Pomidoro.Stats;
 
-// Цвет закрепляется за порядковым номером типа в списке, поэтому при смене периода
-// и включении-выключении кнопок он за типом сохраняется. «Без типа» всегда серый.
+// A color is bound to the type's index in the list, so it stays with the type when the period
+// changes or buttons are toggled. "No type" is always gray.
 internal static class TypePalette
 {
     private static readonly Brush[] Palette =

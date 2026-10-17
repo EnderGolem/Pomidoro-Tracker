@@ -7,18 +7,18 @@ using Xunit;
 
 namespace Pomidoro.Tests;
 
-// Язык в параметрах тестов — флагом, а не перечислением: AppLanguage внутренний,
-// а методы тестов обязаны быть публичными.
+// The language in test parameters is a flag, not an enum: AppLanguage is internal,
+// while test methods have to be public.
 //
-// Глобальный язык тесты не переключают: Loc один на процесс, а xunit гоняет классы
-// параллельно. Поэтому проверяются сами наборы строк, а не их подмена на ходу.
+// Tests don't switch the global language: Loc is one per process, and xunit runs classes
+// in parallel. So the string sets themselves are checked, not swapping them on the fly.
 public class StringsTests
 {
     private static readonly Strings Russian = new RussianStrings();
     private static readonly Strings English = new EnglishStrings();
 
-    // Какой язык выбран — решает сборка, поэтому проверяется не он, а то,
-    // что выбранный набор действительно один из двух объявленных.
+    // The build decides which language is selected, so what's checked is not the language
+    // but that the selected set really is one of the two declared.
     [Fact]
     public void The_build_picks_one_of_the_two_languages()
     {
@@ -28,8 +28,8 @@ public class StringsTests
         Assert.Contains(Loc.All, strings => strings.Language == Loc.S.Language);
     }
 
-    // Пустая подпись на экране — это не ошибка сборки, а дыра, которую видит
-    // пользователь. Поэтому её ищет тест.
+    // An empty label on screen isn't a build error but a hole the user
+    // sees. That's why a test hunts for it.
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -115,8 +115,8 @@ public class StringsTests
         Assert.Equal("Работа", strings.TypeDisplay("Работа"));
     }
 
-    // Подпись «без типа» любого языка должна быть закрыта для ручного ввода,
-    // иначе после переключения языка настоящий тип столкнётся с корзиной.
+    // The "no type" label of either language must be closed to manual entry,
+    // otherwise after a language switch a real type would collide with the bucket.
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -125,8 +125,8 @@ public class StringsTests
         Assert.True(WorkTypes.IsReservedName(Of(english).NoType));
     }
 
-    // Ключ в разметке — строка, и опечатку в нём компилятор не поймает.
-    // Поэтому её ищет тест: у каждого {loc:Text X} обязано быть свойство X.
+    // A key in markup is a string, and the compiler won't catch a typo in it.
+    // So a test hunts for it: every {loc:Text X} must have a property X.
     [Fact]
     public void Every_key_used_in_markup_exists()
     {

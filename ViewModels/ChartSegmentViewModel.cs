@@ -2,7 +2,7 @@ using System.Windows.Media;
 
 namespace Pomidoro.ViewModels;
 
-// Кусок столбика — один тип внутри одного дня.
+// A bar segment: one type within one day.
 internal sealed class ChartSegmentViewModel
 {
     public required Brush Fill { get; init; }

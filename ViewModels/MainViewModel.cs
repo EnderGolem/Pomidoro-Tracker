@@ -5,8 +5,8 @@ using Pomidoro.Storage;
 
 namespace Pomidoro.ViewModels;
 
-// Сшивает экраны вместе: какой из них виден, кто перечитывает базу после правок
-// и куда уходит завершённая помидорка.
+// Stitches the screens together: which one is visible, who reloads the database after edits
+// and where a finished pomodoro goes.
 internal sealed class MainViewModel : ObservableObject
 {
     private readonly ISessionStore _store;
@@ -76,7 +76,7 @@ internal sealed class MainViewModel : ObservableObject
         set => Set(ref _isSettingsOpen, value);
     }
 
-    // Окно могло провисеть в трее до следующего дня — тогда «сегодня» уже другое.
+    // The window could have sat in the tray until the next day, and then "today" is another day.
     public void ReloadVisibleScreen()
     {
         if (_isStatsVisible)
@@ -95,7 +95,7 @@ internal sealed class MainViewModel : ObservableObject
         ReloadVisibleScreen();
     }
 
-    // Меню настроек — отдельное окно системы, и Hide() главного окна его не прячет.
+    // The settings menu is a separate system window, and Hide() on the main window doesn't hide it.
     public void OnHiddenToTray()
     {
         IsSettingsOpen = false;

@@ -10,13 +10,13 @@ public partial class StatsView : UserControl
     {
         InitializeComponent();
 
-        // Размер панели и модель появляются в разном порядке, поэтому ждём оба события:
-        // какое придёт вторым, то и отдаст модели окончательный размер.
+        // The panel size and the model arrive in no fixed order, so both events are awaited:
+        // whichever comes second hands the model the final size.
         DataContextChanged += (_, _) => PushPlotSize();
     }
 
-    // Столбики считаются в пикселях от доступного места, а привязать размер
-    // напрямую нечем: ActualWidth только для чтения.
+    // Bars are sized in pixels from the available space, and the size can't be bound
+    // directly: ActualWidth is read-only.
     private void OnChartHostSizeChanged(object sender, SizeChangedEventArgs e)
     {
         PushPlotSize();

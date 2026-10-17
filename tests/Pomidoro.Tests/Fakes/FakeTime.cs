@@ -1,6 +1,6 @@
 namespace Pomidoro.Tests.Fakes;
 
-// Время идёт только тогда, когда его двигает тест.
+// Time moves only when the test moves it.
 internal sealed class FakeTime : TimeProvider
 {
     private DateTimeOffset _utcNow;

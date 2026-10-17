@@ -1,29 +1,25 @@
-# Сборка и выпуск
+# Build and release
 
-## Что нужно
+## Requirements
 
 - .NET SDK 9
-- Windows (проект целится в `net9.0-windows` и использует WPF)
+- Windows (the project targets `net9.0-windows` and uses WPF)
 
-Visual Studio не обязательна: всё собирается и запускается из консоли.
+Visual Studio is optional: everything builds and runs from the console.
 
-## Конфигурации
+## Configurations
 
-| Конфигурация | Для чего |
+| Configuration | Purpose |
 |---|---|
-| `Debug` | обычная отладочная |
-| `DebugLocal` | отладочная с символом `DEBUG_LOCAL`, используется по умолчанию |
-| `Release` | выпуск, оптимизация включена |
+| `Debug` | regular debug build |
+| `Release` | release, optimization enabled |
 
 ```
-dotnet build Pomidoro.sln -c DebugLocal
-bin\DebugLocal\net9.0-windows\Pomidoro.exe
+dotnet build Pomidoro.sln -c Debug
+bin\Debug\net9.0-windows\Pomidoro.exe
 ```
 
-`DebugLocal` отличается от `Debug` только дополнительным символом компиляции
-и живёт здесь по привычке автора — ни одного `#if DEBUG_LOCAL` в коде сейчас нет.
-
-## Что включено в `Pomidoro.csproj`
+## What is enabled in `Pomidoro.csproj`
 
 ```xml
 <Nullable>enable</Nullable>
@@ -33,28 +29,28 @@ bin\DebugLocal\net9.0-windows\Pomidoro.exe
 <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 ```
 
-- **Nullable включён.** Ссылка, которая может быть `null`, помечена `?`, и компилятор
-  следит за проверками.
-- **Анализаторы на уровне `latest-recommended`.** Это заметно больше правил, чем
-  по умолчанию: культура форматирования, освобождение ресурсов, подозрительный SQL,
-  безопасность P/Invoke.
-- **Предупреждения — ошибки.** «Собралось» означает «собралось начисто». Если мешает,
-  строка убирается, но лучше чинить причину.
+- **Nullable is on.** A reference that may be `null` is marked with `?`, and the compiler
+  keeps track of the checks.
+- **Analyzers at the `latest-recommended` level.** That is noticeably more rules than
+  the default: formatting culture, disposing of resources, suspicious SQL,
+  P/Invoke safety.
+- **Warnings are errors.** "It built" means "it built cleanly". If it gets in the way,
+  the line can be removed, but it is better to fix the cause.
 
-Отключено ровно три правила, каждое в `.editorconfig` с объяснением:
+Exactly three rules are turned off, each in `.editorconfig` with an explanation:
 
-| Правило | Почему выключено |
+| Rule | Why it is off |
 |---|---|
-| `CA1303` | строки интерфейса жёстко русские, ресурсов для перевода нет и не планируется |
-| `CA1062` | проверки аргументов на `null` не нужны: все типы `internal`, вызовов извне сборки нет |
-| `CA1707` | только для `tests/**`: имена тестов — фразы через подчёркивания |
+| `CA1303` | the UI strings are hard-coded Russian, there are no resources for translation and none are planned |
+| `CA1062` | `null` checks on arguments are not needed: all types are `internal`, there are no calls from outside the assembly |
+| `CA1707` | only for `tests/**`: test names are phrases joined with underscores |
 
-Там, где правило нарушено осознанно и однократно, стоит `[SuppressMessage]`
-с объяснением прямо в коде. Таких мест четыре: два `catch (Exception)` в консоли
-и при открытии базы, один в проигрывателе звука и один на `App` (владеет
-освобождаемыми полями, но освобождает их в `OnExit`).
+Where a rule is broken deliberately and in a single place, there is a `[SuppressMessage]`
+with an explanation right in the code. There are four such places: two `catch (Exception)` in the console
+and when opening the database, one in the sound player and one on `App` (it owns
+disposable fields but disposes of them in `OnExit`).
 
-### Подключение WinForms
+### Bringing in WinForms
 
 ```xml
 <UseWPF>true</UseWPF>
@@ -66,82 +62,82 @@ bin\DebugLocal\net9.0-windows\Pomidoro.exe
 </ItemGroup>
 ```
 
-WinForms нужен только ради `NotifyIcon`: своего значка в трее у WPF нет.
-Неявные `using` обязательно снимаются — иначе `Button`, `TextBox` и `MessageBox`
-из WinForms начинают конфликтовать с одноимёнными типами WPF по всему проекту.
+WinForms is needed only for `NotifyIcon`: WPF has no tray icon of its own.
+The implicit `using`s must be removed — otherwise `Button`, `TextBox` and `MessageBox`
+from WinForms start clashing with the WPF types of the same name all over the project.
 
-Там, где типы обеих библиотек встречаются в одном файле (`Tray/TomatoIcon.cs`),
-используется псевдоним:
+Where types from both libraries meet in one file (`Tray/TomatoIcon.cs`),
+an alias is used:
 
 ```csharp
 using ImageSource = System.Windows.Media.ImageSource;
 ```
 
-### Тесты внутри папки проекта
+### Tests inside the project folder
 
 ```xml
 <DefaultItemExcludes>$(DefaultItemExcludes);tests\**</DefaultItemExcludes>
 <InternalsVisibleTo Include="Pomidoro.Tests" />
 ```
 
-Проект тестов лежит в `tests/Pomidoro.Tests/`, то есть внутри папки основного проекта.
-SDK-проекты по умолчанию забирают **все** `.cs` рекурсивно, поэтому папка явно исключена.
-`InternalsVisibleTo` открывает тестам внутренние типы — без него пришлось бы делать
-всё публичным ради проверок.
+The test project lives in `tests/Pomidoro.Tests/`, that is, inside the main project's folder.
+SDK-style projects pick up **all** `.cs` files recursively by default, so the folder is excluded explicitly.
+`InternalsVisibleTo` opens internal types to the tests — without it everything would have
+to be made public just for the sake of testing.
 
-### Пакеты
+### Packages
 
-| Пакет | Версия | Зачем |
+| Package | Version | Why |
 |---|---|---|
-| `Microsoft.Data.Sqlite` | 9.0.11 | работа с базой |
-| `SQLitePCLRaw.bundle_e_sqlite3` | 3.0.5 | нативная библиотека SQLite в комплекте |
+| `Microsoft.Data.Sqlite` | 9.0.11 | working with the database |
+| `SQLitePCLRaw.bundle_e_sqlite3` | 3.0.5 | bundled native SQLite library |
 
-Версии закреплены точно. Второй пакет нужен, чтобы не зависеть от SQLite, установленного
-в системе, — и именно из-за него у публикации одним файлом включён
-`IncludeNativeLibrariesForSelfExtract`.
+Versions are pinned exactly. The second package is there so as not to depend on the SQLite installed
+on the system — and it is precisely because of it that single-file publishing has
+`IncludeNativeLibrariesForSelfExtract` enabled.
 
-## Тесты
+## Tests
 
 ```
-dotnet test tests\Pomidoro.Tests\Pomidoro.Tests.csproj -c DebugLocal
+dotnet test tests\Pomidoro.Tests\Pomidoro.Tests.csproj -c Debug
 ```
 
-Проект тестов тоже с анализаторами, но без `TreatWarningsAsErrors`. Подробнее —
-в [06-testing.md](06-testing.md).
+The test project has analyzers too, but no `TreatWarningsAsErrors`. More details
+in [06-testing.md](06-testing.md).
 
-## Публикация
+## Publishing
 
-Русская и английская версии — **два разных файла**: язык зашивается при сборке,
-переключателя в интерфейсе нет. Выпуск обеих:
+The Russian and English versions are **two different files**: the language is baked in at build time,
+and there is no switch in the UI. Releasing both:
 
 ```
 dotnet publish -p:PublishProfile=SingleFile-Ru
 dotnet publish -p:PublishProfile=SingleFile-En
 ```
 
-| Профиль | Куда | Язык | Размер | Нужен .NET |
+| Profile | Where | Language | Size | Needs .NET |
 |---|---|---|---|---|
-| `SingleFile-Ru` | `publish\ru\` | русский | ~72 МБ | нет |
-| `SingleFile-En` | `publish\en\` | английский | ~72 МБ | нет |
-| `SingleFile-Framework` | `publish\framework\` | русский | ~2.4 МБ | да, .NET 9 Desktop Runtime |
-| `FolderProfile` | `bin\Release\net9.0-windows\publish\win-x64\` | русский | папка с файлами | нет |
+| `SingleFile-Ru` | `publish\ru\` | Russian | ~72 MB | no |
+| `SingleFile-En` | `publish\en\` | English | ~72 MB | no |
+| `SingleFile-Framework` | `publish\framework\` | Russian | ~2.4 MB | yes, .NET 9 Desktop Runtime |
+| `FolderProfile` | `bin\Release\net9.0-windows\publish\win-x64\` | Russian | a folder of files | no |
 
-Результат первых трёх — ровно один `Pomidoro.exe`. Четвёртый раскладывает
-самодостаточную сборку обычной папкой и остался от шаблона Visual Studio.
+The first three produce exactly one `Pomidoro.exe`. The fourth lays out
+a self-contained build as a regular folder and is left over from the Visual Studio template.
 
-Английскую версию включает свойство `AppLanguage=en`; оно работает с любым профилем
-и с обычной сборкой:
+The English version is turned on by the `AppLanguage=en` property; it works with any profile
+and with a regular build:
 
 ```
-dotnet build Pomidoro.sln -c DebugLocal -p:AppLanguage=en
+dotnet build Pomidoro.sln -c Debug -p:AppLanguage=en
 ```
 
-**Обе версии кладут промежуточные файлы в один и тот же `bin\Release`.** MSBuild
-пересобирает их, потому что меняются аргументы компилятора, но если выпуск важен —
-снеси `bin\Release` перед ним и проверь заголовок окна у готового `.exe`. Это самая
-дешёвая проверка, что язык тот.
+**Both versions put their intermediate files into the same `bin\Release`.** MSBuild
+rebuilds them because the compiler arguments change, but if the release matters,
+wipe `bin\Release` before it and check the window title of the finished `.exe`. That is the
+cheapest way to check the language is the right one.
 
-Ключевые настройки самодостаточного профиля:
+Key settings of the self-contained profile:
 
 ```xml
 <SelfContained>true</SelfContained>
@@ -152,17 +148,17 @@ dotnet build Pomidoro.sln -c DebugLocal -p:AppLanguage=en
 <DebugType>none</DebugType>
 ```
 
-`IncludeNativeLibrariesForSelfExtract` нужен из-за SQLite: без него нативная
-`e_sqlite3.dll` осталась бы лежать рядом с `.exe` отдельным файлом. База при этом
-всё равно создаётся рядом с `.exe`, а не во временной папке распаковки, — за это
-отвечает `AppContext.BaseDirectory`.
+`IncludeNativeLibrariesForSelfExtract` is needed because of SQLite: without it the native
+`e_sqlite3.dll` would stay next to the `.exe` as a separate file. The database is still
+created next to the `.exe`, not in the temporary extraction folder — that is
+what `AppContext.BaseDirectory` takes care of.
 
-Сжать сильнее не выйдет: `PublishTrimmed` с WPF не поддерживается, а сжатие в профиле
-уже включено (без него вышло бы около 160 МБ).
+It can't be made any smaller: `PublishTrimmed` is not supported with WPF, and compression
+is already enabled in the profile (without it the result would be around 160 MB).
 
-## Непрерывная сборка
+## Continuous integration
 
-`.github/workflows/build.yml` — на каждый push и pull request в `main`:
+`.github/workflows/build.yml` — on every push and pull request to `main`:
 
 ```yaml
 runs-on: windows-latest
@@ -172,22 +168,22 @@ steps:
   - dotnet test tests/Pomidoro.Tests/Pomidoro.Tests.csproj -c Release --no-build
 ```
 
-`windows-latest` обязателен: WPF на Linux не собирается.
+`windows-latest` is mandatory: WPF does not build on Linux.
 
-## Кодировки и переводы строк
+## Encodings and line endings
 
-- Исходники: **UTF-8 без BOM**, переводы строк **CRLF**.
-- Правила закреплены в `.editorconfig` и `.gitattributes`.
+- Sources: **UTF-8 without BOM**, line endings **CRLF**.
+- The rules are pinned in `.editorconfig` and `.gitattributes`.
 
-Смешанные кодировки в проекте с кириллицей — источник неприятностей: часть файлов
-читается как ANSI, и комментарии превращаются в кракозябры. Если правишь файлы
-чем-то кроме Visual Studio, следи за этим.
+Mixed encodings in a project with Cyrillic are a source of trouble: some files
+get read as ANSI, and comments turn into mojibake. If you edit files
+with anything other than Visual Studio, keep an eye on this.
 
-Отдельная ловушка, не связанная с проектом, но встречающаяся рядом: `.ps1`-скрипты
-в UTF-8 **без** BOM Windows PowerShell 5.1 читает как ANSI и ломается на кириллице.
-Для скриптов BOM нужен.
+A separate trap, not related to the project but found nearby: Windows PowerShell 5.1 reads
+`.ps1` scripts in UTF-8 **without** a BOM as ANSI and breaks on Cyrillic.
+Scripts need the BOM.
 
-## Что игнорируется гитом
+## What git ignores
 
 ```
 bin/  obj/  publish/  TestResults/
@@ -195,4 +191,4 @@ bin/  obj/  publish/  TestResults/
 pomodoro.db  pomodoro.db-shm  pomodoro.db-wal
 ```
 
-База исключена намеренно: это личные данные, им не место в репозитории.
+The database is excluded on purpose: it is personal data and has no place in the repository.

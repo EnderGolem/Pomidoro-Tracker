@@ -71,7 +71,7 @@ public class PomodoroTimerTests
     {
         _timer.Start(Work, Rest);
 
-        // Тик пришёл позже нуля, но в историю должно попасть ровно 25 минут.
+        // The tick arrived after zero, but exactly 25 minutes must go into history.
         _time.Advance(Work + TimeSpan.FromMilliseconds(80));
         TimerStep step = _timer.Advance();
 

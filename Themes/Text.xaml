@@ -5,7 +5,7 @@
         <ResourceDictionary Source="Colors.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <!-- Мелкая подпись над значением: «СЕГОДНЯ», «МИНУТ», «ТИП» -->
+    <!-- Small caption above a value: "TODAY", "MINUTES", "TYPE" -->
     <Style x:Key="CaptionText" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
         <Setter Property="FontSize" Value="11" />
@@ -19,7 +19,7 @@
         <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
     </Style>
 
-    <!-- Крупное число: часы за день или за период -->
+    <!-- Large number: hours for the day or the period -->
     <Style x:Key="TotalText" TargetType="TextBlock" BasedOn="{StaticResource ValueText}">
         <Setter Property="FontSize" Value="26" />
         <Setter Property="FontWeight" Value="SemiBold" />
@@ -34,7 +34,7 @@
         <Setter Property="Padding" Value="14" />
     </Style>
 
-    <!-- Вдавленная область под списком или диаграммой -->
+    <!-- Sunken area under a list or the chart -->
     <Style x:Key="WellBorder" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="CornerRadius" Value="6" />

@@ -140,7 +140,7 @@ internal sealed class TimerViewModel : ObservableObject
         {
             _ticker.Stop();
 
-            // В покое циферблат показывает выставленную длительность работы.
+            // When idle, the dial shows the configured work duration.
             TimeText = Format.Clock(TimeSpan.FromMinutes(_settings.WorkMinutes));
             PhaseText = Loc.S.PhaseIdle;
             HintText = Loc.S.HintIdle;

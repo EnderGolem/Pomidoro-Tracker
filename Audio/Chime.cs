@@ -4,8 +4,8 @@ using System.Media;
 
 namespace Pomidoro.Audio;
 
-// Звук конца фазы. Волна синтезируется в памяти, чтобы не таскать с приложением
-// wav-файл и не зависеть от того, какие системные звуки настроены у пользователя.
+// End-of-phase sound. The wave is synthesized in memory so the app doesn't have to ship
+// a wav file or depend on which system sounds the user has configured.
 internal static class Chime
 {
     private const int SampleRate = 44100;
@@ -15,7 +15,7 @@ internal static class Chime
     private const double AttackSeconds = 0.005;
     private const int WaveHeaderBytes = 44;
 
-    // Основной тон и его обертоны — вместе дают колокольчик, а не писк.
+    // The fundamental and its overtones together make a bell, not a squeak.
     private static readonly (double Frequency, double Weight)[] Partials =
     [
         (880.0, 0.60),
@@ -23,14 +23,14 @@ internal static class Chime
         (2640.0, 0.12)
     ];
 
-    // Один проигрыватель на всё время работы: пересоздавать его на каждый сигнал
-    // значит оставлять за собой неосвобождённые потоки.
+    // One player for the app's whole lifetime: recreating it for every signal
+    // would leave unreleased streams behind.
     private static readonly Lazy<SoundPlayer> Player = new(CreatePlayer);
 
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Нет звуковой карты или устройство занято — таймер из-за этого падать не должен")]
+        Justification = "No sound card or the device is busy: the timer must not crash because of that")]
     public static void Play()
     {
         try
@@ -60,10 +60,10 @@ internal static class Chime
         {
             double time = (double)i / SampleRate;
 
-            // Экспоненциальное затухание — звук отзвенивает, а не обрывается щелчком.
+            // Exponential decay: the sound rings out instead of cutting off with a click.
             double envelope = Math.Exp(-DecayPerSecond * time);
 
-            // Короткая атака убирает щелчок в самом начале.
+            // A short attack removes the click at the very start.
             envelope *= Math.Min(1.0, time / AttackSeconds);
 
             double value = 0.0;
@@ -93,12 +93,12 @@ internal static class Chime
         writer.Write("WAVE"u8);
 
         writer.Write("fmt "u8);
-        writer.Write(16);                                            // размер fmt-блока
+        writer.Write(16);                                            // fmt chunk size
         writer.Write((short)1);                                      // PCM
         writer.Write(channels);
         writer.Write(SampleRate);
-        writer.Write(SampleRate * channels * bitsPerSample / 8);     // байт в секунду
-        writer.Write((short)(channels * bitsPerSample / 8));         // выравнивание блока
+        writer.Write(SampleRate * channels * bitsPerSample / 8);     // bytes per second
+        writer.Write((short)(channels * bitsPerSample / 8));         // block align
         writer.Write(bitsPerSample);
 
         writer.Write("data"u8);

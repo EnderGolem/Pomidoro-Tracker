@@ -5,7 +5,7 @@
         <ResourceDictionary Source="Colors.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <!-- Поле в рамке: настройки под шестерёнкой -->
+    <!-- Bordered field: settings under the gear -->
     <Style x:Key="SettingsBox" TargetType="TextBox">
         <Setter Property="Background" Value="{StaticResource BackgroundBrush}" />
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
@@ -17,7 +17,7 @@
         <Setter Property="CaretBrush" Value="{StaticResource TextBrush}" />
     </Style>
 
-    <!-- Поле прямо в строке списка: без рамки, подсвечивается под курсором -->
+    <!-- Field right in a list row: no border, highlighted under the cursor -->
     <Style x:Key="CellBox" TargetType="TextBox">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
@@ -68,7 +68,7 @@
         </Setter>
     </Style>
 
-    <!-- Стандартный ComboBox светлый и в тёмной теме выглядит чужим, поэтому шаблон свой -->
+    <!-- The stock ComboBox is light and looks out of place in the dark theme, hence a custom template -->
     <Style x:Key="TypeCombo" TargetType="ComboBox">
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
         <Setter Property="FontSize" Value="13" />

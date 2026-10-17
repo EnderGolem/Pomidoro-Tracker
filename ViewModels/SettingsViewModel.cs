@@ -9,8 +9,8 @@ using Pomidoro.Storage;
 
 namespace Pomidoro.ViewModels;
 
-// Меню под шестерёнкой. Всё, что сюда вводят, проверяется на месте и сразу
-// уходит в базу; мусор откатывается к прежнему значению.
+// The menu under the gear. Everything entered here is validated on the spot and goes
+// straight to the database; garbage rolls back to the previous value.
 internal sealed class SettingsViewModel : ObservableObject
 {
     private readonly ISessionStore _store;

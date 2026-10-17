@@ -53,8 +53,8 @@
                 </StackPanel>
             </Grid>
 
-            <!-- Диаграмма. Сетка лежит под столбиками и мышь не ловит, поэтому
-                 их подсказки она не перехватывает. -->
+            <!-- Chart. The grid lies under the bars and isn't hit-testable, so
+                 it doesn't intercept their tooltips. -->
             <Border x:Name="ChartHost"
                     Grid.Row="2"
                     Height="190"
@@ -160,7 +160,7 @@
                                     </StackPanel>
 
                                     <DataTemplate.Triggers>
-                                        <!-- Выходные приглушаем: по ним видно, где кончается рабочая неделя -->
+                                        <!-- Weekends are dimmed: they show where the work week ends -->
                                         <DataTrigger Binding="{Binding IsWeekend}" Value="True">
                                             <Setter TargetName="ColumnRoot" Property="Opacity" Value="0.75" />
                                         </DataTrigger>

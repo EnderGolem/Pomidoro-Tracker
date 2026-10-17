@@ -3,7 +3,7 @@ using Pomidoro.Storage;
 
 namespace Pomidoro.Tests.Fakes;
 
-// Хранилище в памяти: ради него ISessionStore и выделен в интерфейс.
+// In-memory store: it's the reason ISessionStore was extracted into an interface.
 internal sealed class FakeSessionStore : ISessionStore
 {
     private readonly List<WorkSession> _sessions = [];

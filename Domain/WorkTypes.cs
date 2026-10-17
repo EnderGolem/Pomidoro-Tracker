@@ -6,9 +6,9 @@ internal static class WorkTypes
 
     public static readonly StringComparer Comparer = StringComparer.OrdinalIgnoreCase;
 
-    // Подписи «без типа» обоих языков закрыты сразу и навсегда. Иначе тип, заведённый
-    // в английском интерфейсе, столкнулся бы с синтетической корзиной после
-    // переключения на русский — и наоборот.
+    // The "no type" labels of both languages are reserved at once and for good. Otherwise a type
+    // created in the English UI would collide with the synthetic bucket after
+    // switching to Russian, and vice versa.
     public static readonly IReadOnlyList<string> ReservedNames =
     [
         "Без типа",
@@ -18,9 +18,9 @@ internal static class WorkTypes
 
     public static HashSet<string> NewSet() => new(Comparer);
 
-    // В записи тип лежит строкой, а справочник сравнивает имена без учёта регистра.
-    // Без приведения к написанию из справочника «Работа» и «работа» разъезжаются
-    // на две разные строки в диаграмме, в легенде и в итогах.
+    // A record stores the type as a string, while the catalog compares names case-insensitively.
+    // Without normalizing to the catalog's spelling, "Work" and "work" split
+    // into two separate entries in the chart, the legend and the totals.
     public static string Canonical(string? storedType, IReadOnlyList<string> catalog)
     {
         if (string.IsNullOrWhiteSpace(storedType))

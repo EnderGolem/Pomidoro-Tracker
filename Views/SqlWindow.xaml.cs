@@ -30,8 +30,8 @@ public partial class SqlWindow : Window
         Run();
     }
 
-    // Выделенный фрагмент достаём здесь: SelectedText не является свойством
-    // зависимости, и привязать его к модели нечем.
+    // The selected fragment is fetched here: SelectedText is not a dependency
+    // property, and there's nothing to bind it to the model with.
     private void Run()
     {
         if (DataContext is SqlConsoleViewModel viewModel)

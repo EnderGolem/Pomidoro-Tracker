@@ -7,7 +7,7 @@ using Pomidoro.Storage;
 
 namespace Pomidoro.ViewModels;
 
-// Строка списка помидорок. Минуты и тип правятся прямо в ней и сразу уходят в базу.
+// A pomodoro list row. Minutes and type are edited in place and go straight to the database.
 internal sealed class SessionRowViewModel : ObservableObject
 {
     public const int MinMinutes = 0;
@@ -33,15 +33,15 @@ internal sealed class SessionRowViewModel : ObservableObject
         Date = showDate ? Format.DayAndMonth(DateOnly.FromDateTime(session.EndLocal)) : string.Empty;
         EndTime = Format.TimeOfDay(session.EndLocal);
 
-        // Поля заполняем напрямую: через свойства это выглядело бы как правка
-        // и записалось бы в базу при первой же отрисовке строки.
+        // Fields are set directly: going through the properties would look like an edit
+        // and be written to the database on the row's very first render.
         _minutes = Format.Minutes(session.Duration);
         _selectedOption = Type.Length == 0 ? WorkTypes.NoTypeOption : Type;
 
         List<string> options = [WorkTypes.NoTypeOption, .. typeCatalog];
 
-        // Тип могли убрать из справочника уже после того, как им пометили запись:
-        // в истории он остаётся, и выбрать его обратно тоже должно быть можно.
+        // The type may have been removed from the catalog after the record was tagged with it:
+        // it stays in history, and it must still be possible to select it again.
         if (Type.Length > 0 && !typeCatalog.Contains(Type, WorkTypes.Comparer))
         {
             options.Add(Type);
@@ -71,8 +71,8 @@ internal sealed class SessionRowViewModel : ObservableObject
 
     public ICommand DeleteCommand { get; }
 
-    // Мусор и выход за границы молча откатываются к прежнему значению: ругаться
-    // диалогом на каждую опечатку в списке было бы чересчур.
+    // Garbage and out-of-range values silently roll back to the previous value: complaining
+    // with a dialog about every typo in the list would be too much.
     public string Minutes
     {
         get => _minutes;

@@ -18,20 +18,20 @@ trim_trailing_whitespace = false
 indent_size = 4
 
 [*.cs]
-# Пространства имён и использование типов
+# Namespaces and type usage
 csharp_style_namespace_declarations = file_scoped:warning
 dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
 
-# Явные типы вместо var: код читают чаще, чем пишут
+# Explicit types instead of var: code is read more often than written
 csharp_style_var_for_built_in_types = false:suggestion
 csharp_style_var_when_type_is_apparent = false:suggestion
 csharp_style_var_elsewhere = false:suggestion
 
-# Скобки обязательны даже у однострочников
+# Braces are required even for one-liners
 csharp_prefer_braces = true:warning
 
-# Форматирование
+# Formatting
 csharp_new_line_before_open_brace = all
 csharp_new_line_before_else = true
 csharp_new_line_before_catch = true
@@ -40,7 +40,7 @@ csharp_indent_case_contents = true
 csharp_indent_switch_labels = true
 csharp_space_after_cast = false
 
-# Именование: приватные поля _camelCase, всё остальное PascalCase
+# Naming: private fields are _camelCase, everything else is PascalCase
 dotnet_naming_rule.private_fields_underscore.severity = warning
 dotnet_naming_rule.private_fields_underscore.symbols = private_fields
 dotnet_naming_rule.private_fields_underscore.style = underscore_camel_case
@@ -61,12 +61,12 @@ dotnet_naming_symbols.constants.required_modifiers = const
 
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 
-# Строки интерфейса жёстко русские и в ресурсы не выносятся: приложение одноязычное
+# UI strings are hard-coded in Russian and not moved to resources: the app is single-language
 dotnet_diagnostic.CA1303.severity = none
 
 [tests/**/*.cs]
-# Имена тестов — это фраза через подчёркивания: так их читает отчёт о прогоне
+# Test names are phrases joined by underscores: that is how the test run report reads them
 dotnet_diagnostic.CA1707.severity = none
 
-# Проверки аргументов на null не нужны: все типы internal, вызовов извне сборки нет
+# Null checks on arguments aren't needed: all types are internal, nothing calls in from outside
 dotnet_diagnostic.CA1062.severity = none

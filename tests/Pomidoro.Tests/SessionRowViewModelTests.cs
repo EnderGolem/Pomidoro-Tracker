@@ -28,8 +28,8 @@ public class SessionRowViewModelTests
         Assert.Equal("16.10", Row(TestSessions.At(2026, 10, 16, 14, 25), showDate: true).Date);
     }
 
-    // Регрессия: раньше строка с типом, записанным в другом регистре, молча
-    // переписывала историю при первой же отрисовке списка.
+    // Regression: a row whose type was stored in a different case used to silently
+    // rewrite history on the list's very first render.
     [Fact]
     public void Showing_a_row_never_writes_to_the_store()
     {

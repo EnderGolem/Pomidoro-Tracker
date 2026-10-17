@@ -1,7 +1,7 @@
 namespace Pomidoro.ViewModels;
 
-// Горизонтальная линия сетки с подписью часов слева. Лежит под столбиками
-// и мышь не ловит, поэтому их подсказки не перехватывает.
+// Horizontal grid line with the hour label on the left. It lies under the bars
+// and isn't hit-testable, so it doesn't intercept their tooltips.
 internal sealed class GridLineViewModel
 {
     public required double Top { get; init; }

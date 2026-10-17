@@ -56,7 +56,7 @@ public class FormatTests
         Assert.Equal(expected, Format.AxisHours(hours, step));
     }
 
-    // Формат не должен зависеть от локали машины: на ru-RU разделитель дробной части — запятая.
+    // The format must not depend on the machine locale: on ru-RU the decimal separator is a comma.
     [Fact]
     public void Numbers_do_not_follow_the_machine_locale()
     {

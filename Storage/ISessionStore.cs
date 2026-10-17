@@ -2,9 +2,9 @@ using Pomidoro.Domain;
 
 namespace Pomidoro.Storage;
 
-// Хранилище истории и настроек. Выделено в интерфейс ради двух вещей: тесты подставляют
-// сюда список в памяти, а SQLite при необходимости меняется на что-то другое целиком.
-// Временем жизни хранилища распоряжается App, поэтому IDisposable здесь не нужен.
+// History and settings store. Extracted into an interface for two reasons: tests substitute
+// an in-memory list here, and SQLite can be swapped for something else entirely if needed.
+// App owns the store's lifetime, so IDisposable isn't needed here.
 internal interface ISessionStore
 {
     void Add(WorkSession session);

@@ -1,90 +1,90 @@
 # Pomidoro
 
-Настольный помидоро-трекер для Windows: WPF, .NET 9, SQLite рядом с `.exe`.
-Одно окно, два экрана (таймер и статистика), значок в трее.
+A desktop pomodoro tracker for Windows: WPF, .NET 9, SQLite next to the `.exe`.
+One window, two screens (timer and statistics), a tray icon.
 
-## Документация
+## Documentation
 
-**Подробный разбор устройства — в [docs/](docs/README.md).** Там же объяснено,
-почему код выглядит так, а не иначе.
+**A detailed walkthrough of how it is built is in [docs/](docs/README.md).** It also explains
+why the code looks the way it does.
 
-| Документ | О чём |
+| Document | About |
 |---|---|
-| [docs/01-architecture.md](docs/01-architecture.md) | слои, зависимости, сборка приложения, поток данных |
-| [docs/02-domain.md](docs/02-domain.md) | таймер, граница суток, периоды, типы работы |
-| [docs/03-storage.md](docs/03-storage.md) | SQLite: схема, запросы, миграции, настройки, консоль |
-| [docs/04-statistics.md](docs/04-statistics.md) | расчёт статистики и геометрия диаграммы |
-| [docs/05-ui.md](docs/05-ui.md) | MVVM, модели представления, экраны, стили |
-| [docs/06-testing.md](docs/06-testing.md) | что покрыто тестами и как писать новые |
-| [docs/07-build.md](docs/07-build.md) | конфигурации, анализаторы, публикация, CI |
-| [docs/08-decisions.md](docs/08-decisions.md) | журнал решений: почему так, а не иначе |
-| [docs/09-recipes.md](docs/09-recipes.md) | пошагово: добавить настройку, период, колонку |
-| [docs/10-localization.md](docs/10-localization.md) | русский и английский: где строки, как выбирается при сборке |
+| [docs/01-architecture.md](docs/01-architecture.md) | layers, dependencies, application wiring, data flow |
+| [docs/02-domain.md](docs/02-domain.md) | timer, day boundary, periods, work types |
+| [docs/03-storage.md](docs/03-storage.md) | SQLite: schema, queries, migrations, settings, console |
+| [docs/04-statistics.md](docs/04-statistics.md) | statistics computation and chart geometry |
+| [docs/05-ui.md](docs/05-ui.md) | MVVM, view models, screens, styles |
+| [docs/06-testing.md](docs/06-testing.md) | what is covered by tests and how to write new ones |
+| [docs/07-build.md](docs/07-build.md) | configurations, analyzers, publishing, CI |
+| [docs/08-decisions.md](docs/08-decisions.md) | decision log: why this way and not another |
+| [docs/09-recipes.md](docs/09-recipes.md) | step by step: add a setting, a period, a column |
+| [docs/10-localization.md](docs/10-localization.md) | Russian and English: where the strings are, how the language is chosen at build time |
 
-Быстро понять устройство можно по четырём файлам:
+Four files are enough to understand the structure quickly:
 `App.xaml.cs` → `Domain/PomodoroTimer.cs` → `ViewModels/MainViewModel.cs` →
 `Stats/StatsCalculator.cs`.
 
-## Сборка и тесты
+## Build and tests
 
 ```
-dotnet build Pomidoro.sln -c DebugLocal
-dotnet test tests\Pomidoro.Tests\Pomidoro.Tests.csproj -c DebugLocal
-bin\DebugLocal\net9.0-windows\Pomidoro.exe
+dotnet build Pomidoro.sln -c Debug
+dotnet test tests\Pomidoro.Tests\Pomidoro.Tests.csproj -c Debug
+bin\Debug\net9.0-windows\Pomidoro.exe
 ```
 
-Собирать по умолчанию в `DebugLocal`. Предупреждения компилятора и анализаторов
-считаются ошибками — «собралось» означает «собралось начисто».
+Build in `Debug` by default. Compiler and analyzer warnings
+are treated as errors — "it builds" means "it builds cleanly".
 
-## Правила правок
+## Editing rules
 
-- **Слои односторонние:** `Views → ViewModels → Stats → Domain`, `ViewModels → Storage`.
-  `Localization/` и `Formatting/` — листья, на них ссылаются сверху.
-  В `Domain/` и `Stats/` не должно появляться `using System.Windows`
-  (исключение — `Stats/TypePalette.cs` с кистями). `Microsoft.Data.Sqlite` живёт
-  только в `Storage/`.
-- **Логика не живёт в разметке.** Если в `Views/*.xaml.cs` появляется код не про ввод
-  с клавиатуры и не про размеры — он лежит не там.
-- **Новое поведение покрывается тестом** в `tests/Pomidoro.Tests/`, если оно
-  не про разметку. Для времени, тикера и хранилища есть подделки в `Fakes/`.
-- **Типы `internal`**, один тип — один файл, имя файла совпадает с именем типа.
-- **Порядок членов:** константы, поля, конструктор, события, свойства,
-  публичные методы, приватные методы.
-- **Явные типы вместо `var`.**
-- **XML-документации нет.** Комментарий отвечает на «почему», а не на «что»;
-  объяснения — в `docs/`.
-- **Форматирование чисел и дат — только через `Formatting/Format`** и всегда
-  в инвариантной культуре. Слова вокруг числа берутся из `Loc.S`.
-- **Текста в коде и разметке нет.** Любая надпись объявляется в `Localization/Strings.cs`
-  и переводится в обоих наследниках; в разметке — `{loc:Text Ключ}`, в коде — `Loc.S.Ключ`.
-- **Язык зашит в сборку** (`AppLanguage=en` даёт английскую). Переключения во время
-  работы нет: русская и английская версии выпускаются отдельными файлами.
-- **Кодировка:** UTF-8 без BOM, переводы строк CRLF, отступ — четыре пробела.
+- **Layers are one-way:** `Views → ViewModels → Stats → Domain`, `ViewModels → Storage`.
+  `Localization/` and `Formatting/` are leaves, referenced from above.
+  `using System.Windows` must not appear in `Domain/` or `Stats/`
+  (the exception is `Stats/TypePalette.cs` with its brushes). `Microsoft.Data.Sqlite` lives
+  only in `Storage/`.
+- **Logic does not live in markup.** If `Views/*.xaml.cs` gains code that is about neither keyboard
+  input nor sizes, it is in the wrong place.
+- **New behaviour is covered by a test** in `tests/Pomidoro.Tests/` unless it is
+  about markup. There are fakes for time, the ticker and the store in `Fakes/`.
+- **Types are `internal`**, one type per file, and the file name matches the type name.
+- **Member order:** constants, fields, constructor, events, properties,
+  public methods, private methods.
+- **Explicit types instead of `var`.**
+- **No XML documentation.** A comment answers "why", not "what";
+  explanations go in `docs/`.
+- **Numbers and dates are formatted only through `Formatting/Format`**, always
+  in the invariant culture. The words around a number come from `Loc.S`.
+- **No text in code or markup.** Every label is declared in `Localization/Strings.cs`
+  and translated in both subclasses; in markup use `{loc:Text Key}`, in code `Loc.S.Key`.
+- **The language is baked into the build** (`AppLanguage=en` gives the English one). There is no switching
+  at runtime: the Russian and English versions are released as separate files.
+- **Encoding:** UTF-8 without BOM, CRLF line endings, four-space indentation.
 
-## Что легко сломать по незнанию
+## What is easy to break unknowingly
 
-- **Типы сравниваются без учёта регистра.** Группировка идёт по
-  `WorkTypes.Canonical(...)`, множества типов создаются через `WorkTypes.NewSet()`.
-  Сравнение сырых строк вернёт баг, при котором «Работа» и «работа» разъезжаются
-  на две плашки в легенде.
-- **Выборки по `EndUtc`, а не по `LocalDate`.** Граница суток настраивается,
-  и `LocalDate` про это не знает.
-- **Поля в конструкторе моделей строк заполняются напрямую, минуя свойства** —
-  иначе отрисовка списка пишет в базу.
-- **Словарь в `Themes/`, который пользуется цветами, обязан сам подключить
-  `Colors.xaml`**, иначе `StaticResource` не найдёт токен.
-- **Неявные `using` WinForms сняты в `.csproj`** намеренно: иначе `Button`,
-  `TextBox` и `MessageBox` конфликтуют с одноимёнными типами WPF.
-- **`.ps1`-скрипты для проверки интерфейса нужно сохранять с BOM** — Windows
-  PowerShell 5.1 читает UTF-8 без BOM как ANSI и ломается на кириллице.
-- **Служебное имя «без типа» запрещено сразу в обоих языках** (`WorkTypes.ReservedNames`).
-  Проверка не должна зависеть от текущего языка.
-- **Список, привязанный к `ItemsSource`, нельзя пересобирать на ходу.**
-  `ComboBox` не найдёт в новом списке выбранный элемент и выставит `null`.
-- **Привязка с `UpdateSourceTrigger=LostFocus` не отдаёт значение по `Keyboard.ClearFocus()`** —
-  тот снимает фокус клавиатуры, а не логический. Подтверждать по Enter надо
-  явным `UpdateSource()`, как в `SessionListView.xaml.cs`.
-- **Свойство из профиля публикации не видно условному `PropertyGroup`** в `.csproj`:
-  профиль импортируется позже. Нужна цель — см. `AddLanguageConstant`.
-- **В тестах не пиши ожидаемый текст литералом.** Один и тот же набор тестов гоняется
-  для обеих языковых сборок, ожидание берётся из `Loc.S`.
+- **Types are compared case-insensitively.** Grouping goes through
+  `WorkTypes.Canonical(...)`, and sets of types are created with `WorkTypes.NewSet()`.
+  Comparing raw strings brings back the bug where «Работа» and «работа» split
+  into two legend chips.
+- **Queries go by `EndUtc`, not by `LocalDate`.** The day boundary is configurable,
+  and `LocalDate` knows nothing about it.
+- **In row view model constructors, fields are assigned directly, bypassing the properties** —
+  otherwise rendering the list writes to the database.
+- **A dictionary in `Themes/` that uses colors must merge `Colors.xaml` itself**,
+  otherwise `StaticResource` will not find the token.
+- **WinForms implicit `using`s are removed in the `.csproj`** on purpose: otherwise `Button`,
+  `TextBox` and `MessageBox` clash with the WPF types of the same name.
+- **`.ps1` scripts for checking the UI must be saved with a BOM** — Windows
+  PowerShell 5.1 reads UTF-8 without BOM as ANSI and breaks on Cyrillic.
+- **The reserved "no type" name is forbidden in both languages at once** (`WorkTypes.ReservedNames`).
+  The check must not depend on the current language.
+- **A list bound to `ItemsSource` must not be rebuilt on the fly.**
+  `ComboBox` will not find the selected item in the new list and will set it to `null`.
+- **A binding with `UpdateSourceTrigger=LostFocus` does not push its value on `Keyboard.ClearFocus()`** —
+  that clears keyboard focus, not logical focus. Confirming on Enter requires
+  an explicit `UpdateSource()`, as in `SessionListView.xaml.cs`.
+- **A property from a publish profile is not visible to a conditional `PropertyGroup`** in the `.csproj`:
+  the profile is imported later. A target is needed — see `AddLanguageConstant`.
+- **Do not write expected text as a literal in tests.** The same test suite runs
+  for both language builds, so the expected value is taken from `Loc.S`.

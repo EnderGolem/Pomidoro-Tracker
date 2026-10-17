@@ -2,8 +2,8 @@ using Pomidoro.Domain;
 
 namespace Pomidoro.Localization;
 
-// Весь текст интерфейса одним списком. Класс абстрактный намеренно: забытую строку
-// находит компилятор, а не пользователь, увидевший пустую подпись.
+// All UI text in one list. The class is abstract on purpose: a forgotten string
+// is caught by the compiler, not by a user who sees an empty label.
 internal abstract class Strings
 {
     public abstract AppLanguage Language { get; }
@@ -136,8 +136,8 @@ internal abstract class Strings
 
     public abstract string SqlRefreshFailedText { get; }
 
-    // Пустой тип и тип, который пользователь назвал бы «Без типа», — разные вещи:
-    // ключ группировки у первого пустая строка, подпись подставляется только здесь.
+    // An empty type and a type the user might name "No type" are different things:
+    // the former's grouping key is an empty string, and its label is substituted only here.
     public string TypeDisplay(string canonicalType) =>
         canonicalType.Length == 0 ? NoType : canonicalType;
 

@@ -6,9 +6,9 @@ using Xunit;
 
 namespace Pomidoro.Tests;
 
-// Главная модель собирает остальные четыре и связывает их с хранилищем.
-// Проверяется именно сборка: завершённая помидорка должна дойти до базы,
-// а уход с экрана таймера — погасить меню настроек.
+// The main model assembles the other four and wires them to the store.
+// What's tested is the wiring: a finished pomodoro must reach the database,
+// and leaving the timer screen must close the settings menu.
 public class MainViewModelTests
 {
     private readonly FakeSessionStore _store = new();

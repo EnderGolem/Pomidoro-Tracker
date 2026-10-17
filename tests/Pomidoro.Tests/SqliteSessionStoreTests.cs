@@ -6,8 +6,8 @@ using Xunit;
 
 namespace Pomidoro.Tests;
 
-// Тесты идут против настоящего SQLite во временном файле: схема, миграция
-// и запросы — это ровно то, что ломается, если их не проверять.
+// Tests run against real SQLite in a temporary file: the schema, the migration
+// and the queries are exactly what breaks when left untested.
 public class SqliteSessionStoreTests : IDisposable
 {
     private static readonly DayBoundary Midnight = new(0);
@@ -114,8 +114,8 @@ public class SqliteSessionStoreTests : IDisposable
         Assert.Empty(_store.GetRange(Day(2026, 10, 16), Midnight));
     }
 
-    // Встроенный в SQLite NOCASE сворачивает только латиницу, поэтому регистр
-    // сравнивается в C#. Без этого «созвон» и «СОЗВОН» стали бы разными типами.
+    // SQLite's built-in NOCASE folds only Latin letters, so case is
+    // compared in C#. Without that, "созвон" and "СОЗВОН" would become different types.
     [Theory]
     [InlineData("созвон")]
     [InlineData("СОЗВОН")]

@@ -7,8 +7,8 @@ using Pomidoro.Domain;
 
 namespace Pomidoro.Storage;
 
-// Соединение живёт всё время работы приложения и используется только из UI-потока,
-// поэтому ни пула, ни блокировок здесь нет.
+// The connection lives for the app's whole lifetime and is used only from the UI thread,
+// so there is no pool and no locking here.
 internal sealed class SqliteSessionStore : ISessionStore, ISqlConsole, IDisposable
 {
     public const string DatabaseFileName = "pomodoro.db";
@@ -33,8 +33,8 @@ internal sealed class SqliteSessionStore : ISessionStore, ISqlConsole, IDisposab
             DataSource = databasePath,
             Mode = SqliteOpenMode.ReadWriteCreate,
 
-            // Соединение одно и живёт всё время работы приложения, выигрывать пулу нечего.
-            // Зато с ним Dispose не отпускает файл базы, и её нельзя ни удалить, ни скопировать.
+            // There is a single connection for the app's whole lifetime, so a pool gains nothing.
+            // With a pool, though, Dispose keeps the database file open, so it can't be deleted or copied.
             Pooling = false
         }.ToString());
 
@@ -59,8 +59,8 @@ internal sealed class SqliteSessionStore : ISessionStore, ISqlConsole, IDisposab
         command.ExecuteNonQuery();
     }
 
-    // Период разворачивается в границы по EndUtc. Колонка LocalDate для выборок не годится:
-    // она проставлена при записи и не знает, что границу суток потом подвинули.
+    // The period is expanded into bounds on EndUtc. The LocalDate column is unfit for queries:
+    // it is set at write time and doesn't know that the day boundary was moved later.
     public IReadOnlyList<WorkSession> GetRange(DayRange range, DayBoundary boundary)
     {
         using SqliteCommand command = _connection.CreateCommand();
@@ -129,8 +129,8 @@ internal sealed class SqliteSessionStore : ISessionStore, ISqlConsole, IDisposab
         return names;
     }
 
-    // Регистр сравниваем в C#, а не констрейнтом COLLATE NOCASE: встроенный в SQLite
-    // NOCASE сворачивает только латиницу A-Z и считает «созвон» и «СОЗВОН» разными словами.
+    // Case is compared in C#, not by a COLLATE NOCASE constraint: SQLite's built-in
+    // NOCASE folds only Latin A-Z and treats "созвон" and "СОЗВОН" as different words.
     public void AddTypeToCatalog(string name)
     {
         string trimmed = name.Trim();
@@ -183,11 +183,11 @@ internal sealed class SqliteSessionStore : ISessionStore, ISqlConsole, IDisposab
     [SuppressMessage(
         "Security",
         "CA2100:Review SQL queries for security vulnerabilities",
-        Justification = "Консоль разработчика существует ровно для того, чтобы выполнить введённый текст как есть")]
+        Justification = "The developer console exists precisely to execute the entered text as is")]
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Любая ошибка запроса должна попасть в окно консоли, а не уронить приложение")]
+        Justification = "Any query error must end up in the console window instead of crashing the app")]
     public SqlQueryResult Execute(string sql)
     {
         Stopwatch watch = Stopwatch.StartNew();
@@ -304,12 +304,12 @@ internal sealed class SqliteSessionStore : ISessionStore, ISqlConsole, IDisposab
     private static string FormatUtc(DateTime endUtc) =>
         endUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
 
-    // Справочная колонка для ручных запросов из README: выборки идут не по ней.
+    // Informational column for manual queries from the README: queries don't filter on it.
     private static string FormatLocalDate(DateTime endLocal) =>
         endLocal.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    // Формат "O" заканчивается на Z, поэтому RoundtripKind сам выставляет Kind = Utc;
-    // комбинировать его с AdjustToUniversal нельзя — DateTime.Parse на это ругается.
+    // The "O" format ends with Z, so RoundtripKind sets Kind = Utc by itself;
+    // it must not be combined with AdjustToUniversal: DateTime.Parse throws on that.
     private static DateTime ParseUtc(string raw)
     {
         DateTime parsed = DateTime.Parse(raw, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);

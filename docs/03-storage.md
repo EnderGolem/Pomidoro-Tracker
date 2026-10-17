@@ -1,10 +1,10 @@
-# Хранилище
+# Storage
 
-Вся работа с данными живёт в `Storage/`. Снаружи это три вещи: контракт
-`ISessionStore`, обёртка над настройками `AppSettings` и отдельный контракт
-консоли разработчика `ISqlConsole`.
+All data access lives in `Storage/`. From the outside it is three things: the
+`ISessionStore` contract, the `AppSettings` wrapper over settings, and a separate
+contract for the developer console, `ISqlConsole`.
 
-## Где лежит база
+## Where the database lives
 
 ```csharp
 public const string DatabaseFileName = "pomodoro.db";
@@ -12,15 +12,15 @@ public const string DatabaseFileName = "pomodoro.db";
 public static string DefaultDatabasePath => Path.Combine(AppContext.BaseDirectory, DatabaseFileName);
 ```
 
-Файл лежит **рядом с исполняемым файлом**. Папку приложения можно скопировать целиком —
-история переедет вместе с ней; бэкап = копия файла. Это сознательный выбор в пользу
-переносимости: `%APPDATA%` был бы «правильнее», но тогда копирование папки перестало бы
-работать, а приложение рассчитано на то, что его носят с собой.
+The file sits **next to the executable**. The application folder can be copied as a whole —
+the history moves along with it; a backup is a copy of the file. This is a deliberate choice
+in favour of portability: `%APPDATA%` would be "more correct", but then copying the folder
+would stop working, and the application is meant to be carried around.
 
-Для single-file-публикации важно, что `AppContext.BaseDirectory` указывает на папку с
-`.exe`, а не на временный каталог распаковки.
+For a single-file publish it matters that `AppContext.BaseDirectory` points to the folder
+with the `.exe`, not to the temporary extraction directory.
 
-## Контракт `ISessionStore`
+## The `ISessionStore` contract
 
 ```csharp
 internal interface ISessionStore
@@ -40,23 +40,24 @@ internal interface ISessionStore
 }
 ```
 
-Интерфейс нужен ровно для двух вещей: тесты подставляют список в памяти
-(`FakeSessionStore`), а SQLite при желании меняется целиком на что-то другое.
+The interface exists for exactly two reasons: tests substitute an in-memory list
+(`FakeSessionStore`), and SQLite can, if needed, be replaced wholesale with something else.
 
-Чего в нём **нет** и почему:
+What it does **not** have, and why:
 
-- **`IDisposable`.** Временем жизни хранилища распоряжается `App`, который держит
-  конкретный `SqliteSessionStore`. Контракт «куда класть историю» ничего не должен
-  знать про освобождение ресурсов.
-- **Произвольного SQL.** Метод вида `Execute(string sql)` намертво вшил бы SQL в контракт,
-  который заявлен как «реализация может быть любой». Консоль вынесена в `ISqlConsole`.
-- **Отдельных методов для итогов.** Раньше был `GetTotals`, считавший сумму запросом.
-  Сейчас сумма считается в памяти по уже загруженному списку: за день или месяц это
-  десятки записей, а один путь данных вместо двух — меньше мест, где они разойдутся.
+- **`IDisposable`.** The store's lifetime is managed by `App`, which holds the
+  concrete `SqliteSessionStore`. A contract for "where to put the history" should know
+  nothing about releasing resources.
+- **Arbitrary SQL.** A method like `Execute(string sql)` would hard-wire SQL into a contract
+  that claims "the implementation can be anything". The console lives in `ISqlConsole` instead.
+- **Separate methods for totals.** There used to be `GetTotals`, which computed the sum
+  with a query. Now the sum is computed in memory over the already loaded list: for a day
+  or a month that is a few dozen records, and one data path instead of two leaves fewer
+  places for them to diverge.
 
-## Схема
+## Schema
 
-Создаётся при открытии базы, `SqliteSchema.Apply`:
+Created when the database is opened, by `SqliteSchema.Apply`:
 
 ```sql
 CREATE TABLE IF NOT EXISTS WorkSessions (
@@ -78,11 +79,11 @@ CREATE TABLE IF NOT EXISTS TypeCatalog (
     Name TEXT NOT NULL UNIQUE);
 ```
 
-### `EndUtc` — по нему идут все выборки
+### `EndUtc` — every query filters on it
 
-Хранится строкой в формате `"O"` (`2026-10-16T09:31:12.4521870Z`). Текст, а не число,
-по двум причинам: видно глазами при ручных запросах и сортируется как есть
-(формат лексикографически упорядочен).
+Stored as a string in the `"O"` format (`2026-10-16T09:31:12.4521870Z`). Text rather than
+a number, for two reasons: it is human-readable in manual queries, and it sorts as is
+(the format is lexicographically ordered).
 
 ```csharp
 private static string FormatUtc(DateTime endUtc) =>
@@ -95,24 +96,24 @@ private static DateTime ParseUtc(string raw)
 }
 ```
 
-`RoundtripKind` сам выставляет `Kind = Utc`, потому что строка кончается на `Z`.
-Комбинировать его с `AdjustToUniversal` нельзя — `DateTime.Parse` на это ругается,
-поэтому проверка `Kind` стоит отдельной строкой.
+`RoundtripKind` sets `Kind = Utc` by itself, because the string ends with `Z`.
+It cannot be combined with `AdjustToUniversal` — `DateTime.Parse` rejects that,
+so the `Kind` check is a separate line.
 
-### `LocalDate` — справочная колонка
+### `LocalDate` — a reference column
 
-Локальная дата окончания в виде `ГГГГ-ММ-ДД`. **Приложение по ней ничего не выбирает.**
-Она заполняется при вставке и существует только ради ручных запросов из README:
-`WHERE LocalDate LIKE '2026%'` читается лучше, чем арифметика по UTC.
+The local end date as `YYYY-MM-DD`. **The application never queries by it.**
+It is filled on insert and exists only for the manual queries from the README:
+`WHERE LocalDate LIKE '2026%'` reads better than UTC arithmetic.
 
-Выборки по ней вести нельзя: граница суток настраивается, и значение, записанное
-при старых настройках, не знает о новых. Индекс на ней оставлен, потому что ручные
-запросы по ней всё-таки делают.
+Queries must not filter on it: the day boundary is configurable, and a value written
+under old settings knows nothing about new ones. The index on it is kept because
+manual queries do use it.
 
-### `Type` — строка с миграцией
+### `Type` — a string with a migration
 
-Колонка появилась позже остальных, а `CREATE TABLE IF NOT EXISTS` в существующую
-таблицу её не добавит. Поэтому после создания схемы идёт проверка:
+The column was added later than the others, and `CREATE TABLE IF NOT EXISTS` will not add
+it to an existing table. So after the schema is created there is a check:
 
 ```csharp
 if (HasTypeColumn(connection)) { return; }
@@ -120,14 +121,14 @@ if (HasTypeColumn(connection)) { return; }
 migrate.CommandText = "ALTER TABLE WorkSessions ADD COLUMN Type TEXT NOT NULL DEFAULT '';";
 ```
 
-`HasTypeColumn` читает `PRAGMA table_info(WorkSessions)` и смотрит вторую колонку —
-там лежит имя поля. Старые базы открываются и работают, существующие записи получают
-пустой тип.
+`HasTypeColumn` reads `PRAGMA table_info(WorkSessions)` and looks at the second column —
+that is where the field name is. Old databases open and work; existing records get
+an empty type.
 
-Это единственная миграция в проекте. Если понадобится вторая, правильнее завести
-`PRAGMA user_version` и список шагов, а не наращивать проверки.
+This is the only migration in the project. If a second one is ever needed, the right move
+is to introduce `PRAGMA user_version` and a list of steps rather than pile up checks.
 
-## Соединение
+## Connection
 
 ```csharp
 _connection = new SqliteConnection(new SqliteConnectionStringBuilder
@@ -138,31 +139,34 @@ _connection = new SqliteConnection(new SqliteConnectionStringBuilder
 }.ToString());
 ```
 
-- **Одно соединение на всё время работы.** Обращения идут только из UI-потока,
-  конкуренции нет, поэтому ни пула, ни блокировок не нужно.
-- **`Pooling = false`.** С пулом `Dispose` не закрывает файл, а возвращает соединение
-  в пул — и базу нельзя ни удалить, ни скопировать сразу после закрытия приложения.
-  Нашли это тесты: они создают базу во временной папке и удаляют её за собой.
-- **`ReadWriteCreate`.** Базы может ещё не быть — при первом запуске она создаётся.
-  Недостающие каталоги создаются тоже (`Directory.CreateDirectory`).
+- **One connection for the whole lifetime.** All access comes from the UI thread,
+  there is no contention, so neither a pool nor locks are needed.
+- **`Pooling = false`.** With a pool, `Dispose` does not close the file but returns the
+  connection to the pool — and the database can be neither deleted nor copied right
+  after the application exits. The tests found this: they create a database in a temporary
+  folder and delete it afterwards.
+- **`ReadWriteCreate`.** The database may not exist yet — it is created on first run.
+  Missing directories are created as well (`Directory.CreateDirectory`).
 
-Транзакций нет: каждая операция — одна команда, а пакетных изменений в приложении
-не бывает.
+There are no transactions: each operation is a single command, and the application never
+makes batch changes.
 
-## Запросы
+## Queries
 
-Все параметризованы, конкатенации в SQL нет нигде, кроме консоли разработчика.
+All are parameterized; there is no string concatenation in SQL anywhere except the
+developer console.
 
-### Вставка
+### Insert
 
 ```sql
 INSERT INTO WorkSessions (EndUtc, LocalDate, DurationSec, Type)
 VALUES ($endUtc, $localDate, $durationSec, $type);
 ```
 
-`LocalDate` считается здесь же, из `session.EndLocal`. Домен про эту колонку не знает.
+`LocalDate` is computed right here, from `session.EndLocal`. The domain knows nothing
+about this column.
 
-### Выборка за период
+### Selecting a period
 
 ```sql
 SELECT Id, EndUtc, DurationSec, Type FROM WorkSessions
@@ -170,24 +174,24 @@ WHERE EndUtc >= $from AND EndUtc < $to
 ORDER BY EndUtc DESC, Id DESC;
 ```
 
-Границы считает `DayBoundary`: `$from = boundary.StartUtc(range.From)`,
-`$to = boundary.EndUtc(range.To)`. Правый конец **строгий**, поэтому день,
-заканчивающийся ровно на границе, не попадает в оба периода сразу.
+The bounds come from `DayBoundary`: `$from = boundary.StartUtc(range.From)`,
+`$to = boundary.EndUtc(range.To)`. The upper bound is **exclusive**, so a day that
+ends exactly on the boundary does not land in both periods at once.
 
-Сортировка «свежие сверху»; `Id DESC` вторым ключом, чтобы порядок был устойчивым,
-если две записи совпали по времени до тика.
+Sorted "newest first"; `Id DESC` as the second key keeps the order stable
+if two records share the same time down to the tick.
 
-### Справочник типов
+### Type catalog
 
 ```sql
 SELECT Name FROM TypeCatalog ORDER BY Id;
 ```
 
-Порядок — по `Id`, то есть по времени добавления. От него зависит порядок плашек
-в легенде и закреплённые за типами цвета, поэтому алфавит здесь был бы хуже:
-добавление нового типа перекрасило бы половину диаграммы.
+Ordered by `Id`, i.e. by the time of addition. The order of legend chips and the colours
+assigned to types depend on it, so alphabetical order would be worse here:
+adding a new type would repaint half the chart.
 
-Добавление:
+Adding:
 
 ```csharp
 if (trimmed.Length == 0 || WorkTypes.IsReservedName(trimmed) || FindCatalogMatches(trimmed).Count > 0)
@@ -196,18 +200,18 @@ if (trimmed.Length == 0 || WorkTypes.IsReservedName(trimmed) || FindCatalogMatch
 }
 ```
 
-Три отказа молча: пустое имя, служебное имя («Без типа», «—») и дубликат без учёта
-регистра. Молча — потому что это ввод в маленькое поле, а не форма с валидацией;
-ошибку видно сразу по тому, что список не изменился.
+Three silent rejections: an empty name, a reserved name ("No type" / «Без типа», "—")
+and a case-insensitive duplicate. Silent because this is input into a small field,
+not a form with validation; the mistake is obvious from the list not changing.
 
-Удаление убирает **все** совпадения без учёта регистра. Записи, которым этот тип
-проставлен, не трогаются — он просто перестаёт предлагаться для новых.
+Removal deletes **all** case-insensitive matches. Records that have this type are left
+untouched — it simply stops being offered for new ones.
 
-## Настройки
+## Settings
 
-Таблица `Settings` — пары ключ-значение, значение хранится текстом.
-Поверх неё лежит `AppSettings`, чтобы по коду не разъезжались строковые ключи
-и диапазоны:
+The `Settings` table holds key-value pairs, with the value stored as text.
+On top of it sits `AppSettings`, so that string keys and ranges do not get scattered
+across the code:
 
 ```csharp
 public const int MinMinutes = 1;
@@ -216,27 +220,27 @@ public const int DefaultWorkMinutes = 25;
 public const int DefaultRestMinutes = 5;
 ```
 
-| Ключ в базе | Свойство | Диапазон |
+| Database key | Property | Range |
 |---|---|---|
 | `WorkMinutes` | `WorkMinutes` | 1…600 |
 | `BreakMinutes` | `RestMinutes` | 1…600 |
 | `DayBoundaryHour` | `DayBoundaryHour` | 0…23 |
 
-Ключ `BreakMinutes` остался от прежнего названия фазы: в уже существующих базах лежит
-именно он, и переименование ради красоты стоило бы потери настройки.
+The `BreakMinutes` key is left over from the phase's former name: that is the key existing
+databases contain, and renaming it for neatness would cost users the setting.
 
-Значения **читаются один раз при запуске** и кэшируются в полях, а пишутся сразу
-при изменении. Отсюда два следствия: чтение настройки не ходит в базу, а аварийное
-завершение приложения ничего не теряет (раньше настройки сохранялись при закрытии окна
-и терялись, если выход шёл не через меню трея).
+Values are **read once at startup** and cached in fields, and written immediately
+on change. Two consequences follow: reading a setting does not touch the database, and
+a crash of the application loses nothing (settings used to be saved when the window closed
+and were lost if the exit did not go through the tray menu).
 
-Любое сохранение поднимает событие `Changed` — на него подписан `MainViewModel`
-и перечитывает открытый экран: смена границы суток меняет то, что считается «сегодня».
+Every save raises the `Changed` event — `MainViewModel` subscribes to it and reloads
+the open screen: changing the day boundary changes what counts as "today".
 
-Значения из базы приводятся в допустимый диапазон при чтении: если туда через консоль
-вписали `99999`, приложение покажет `600`, а не сломается.
+Values from the database are clamped to the valid range on read: if someone wrote `99999`
+there through the console, the application shows `600` instead of breaking.
 
-## Консоль разработчика
+## Developer console
 
 ```csharp
 internal interface ISqlConsole
@@ -246,11 +250,11 @@ internal interface ISqlConsole
 }
 ```
 
-Реализует его тот же `SqliteSessionStore`, но контракт отдельный: главное окно
-получает `ISessionStore`, окно консоли — `ISqlConsole`. Это единственное место
-в проекте, где SQL приходит снаружи.
+It is implemented by the same `SqliteSessionStore`, but the contract is separate: the main
+window gets `ISessionStore`, the console window gets `ISqlConsole`. This is the only place
+in the project where SQL comes from outside.
 
-### Что происходит с запросом
+### What happens to a query
 
 ```csharp
 using SqliteCommand command = _connection.CreateCommand();
@@ -267,31 +271,31 @@ do
 while (reader.NextResult());
 ```
 
-- Запрос идёт **в живое соединение приложения** — то же самое, с которым работают экраны.
-- Несколько операторов через `;` выполняются подряд, `NextResult` собирает все наборы.
-- Операторы без результата (`INSERT`, `UPDATE`, `CREATE`) дают `FieldCount == 0`
-  и в вывод не попадают, но считаются в `RecordsAffected`.
-- Любое исключение ловится и возвращается в `SqlQueryResult.Error` — консоль
-  показывает текст ошибки вместо таблицы. `catch (Exception)` здесь осознанный,
-  подавление анализатора стоит рядом с объяснением.
+- The query goes **to the application's live connection** — the same one the screens use.
+- Several statements separated by `;` run one after another; `NextResult` collects all sets.
+- Statements without a result (`INSERT`, `UPDATE`, `CREATE`) give `FieldCount == 0`
+  and do not appear in the output, but they are counted in `RecordsAffected`.
+- Any exception is caught and returned in `SqlQueryResult.Error` — the console
+  shows the error text instead of a table. `catch (Exception)` here is deliberate;
+  the analyzer suppression sits next to the explanation.
 
-Ограничения вывода: `MaxSqlRows = 1000` строк на набор (дальше `Truncated`),
-`MaxCellLength = 200` символов на ячейку. `NULL` печатается как `NULL`,
-двоичное — как `BLOB[n]`, переводы строк в ячейке заменяются пробелами,
-чтобы таблица не разъехалась.
+Output limits: `MaxSqlRows = 1000` rows per set (beyond that, `Truncated`),
+`MaxCellLength = 200` characters per cell. `NULL` is printed as `NULL`,
+binary data as `BLOB[n]`, and line breaks inside a cell are replaced with spaces
+so the table does not fall apart.
 
-### Чего консоль не делает
+### What the console does not do
 
-- **Не проверяет запрос.** `DROP TABLE WorkSessions` выполнится. Это инструмент
-  для себя, и предупреждение об этом висит прямо в окне.
-- **Не выполняется в фоне.** Долгий запрос (например `VACUUM` на большой базе)
-  подвесит окно до своего конца.
-- **Не обновляет кэш настроек.** `UPDATE Settings` через консоль не подхватится,
-  пока приложение не перезапустят: `AppSettings` держит значения в полях.
+- **It does not validate the query.** `DROP TABLE WorkSessions` will run. This is a tool
+  for yourself, and a warning about it is shown right in the window.
+- **It does not run in the background.** A long query (for example `VACUUM` on a large
+  database) freezes the window until it finishes.
+- **It does not refresh the settings cache.** An `UPDATE Settings` from the console will not
+  be picked up until the application is restarted: `AppSettings` keeps the values in fields.
 
-После каждого запроса `App.RefreshAfterSql` просит главное окно перечитать базу.
-Если запроса не пережила таблица, на которой держится экран, ошибка допишется
-в вывод консоли, а приложение останется живым.
+After every query `App.RefreshAfterSql` asks the main window to reload the database.
+If a table the screen depends on did not survive the query, the error is appended
+to the console output, and the application stays alive.
 
 ### `SqlQueryResult`
 
@@ -301,9 +305,9 @@ public int RowCount => Sets.Sum(set => set.Rows.Count);
 public int ChangedRows => Math.Max(RecordsAffected, 0);
 ```
 
-`ChangedRows` обрезает `-1`, который `ExecuteReader` возвращает для `SELECT`:
-показывать пользователю «изменено строк: -1» незачем.
+`ChangedRows` clips the `-1` that `ExecuteReader` returns for `SELECT`:
+there is no point in showing the user "rows changed: -1".
 
-Печатает результат `Formatting/SqlResultText`: выравнивает колонки по самому длинному
-значению, разделяет несколько наборов заголовками, пустой результат подписывает как
-`(пусто)`. Это чистая функция, её можно проверить тестом без окна.
+The result is printed by `Formatting/SqlResultText`: it aligns columns to the longest
+value, separates multiple sets with headers, and labels an empty result as
+"(empty)". It is a pure function and can be tested without a window.

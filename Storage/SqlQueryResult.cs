@@ -14,6 +14,6 @@ internal sealed class SqlQueryResult
 
     public int RowCount => Sets.Sum(set => set.Rows.Count);
 
-    // ExecuteReader возвращает -1 для SELECT: показывать такое число пользователю незачем.
+    // ExecuteReader returns -1 for SELECT: there's no point showing that number to the user.
     public int ChangedRows => Math.Max(RecordsAffected, 0);
 }

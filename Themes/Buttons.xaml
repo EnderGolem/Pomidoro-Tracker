@@ -44,7 +44,7 @@
         <Setter Property="Background" Value="{StaticResource AccentBrush}" />
     </Style>
 
-    <!-- Квадратная кнопка-иконка: шестерёнка, стрелка «назад» -->
+    <!-- Square icon button: gear, "back" arrow -->
     <Style x:Key="IconButton" TargetType="Button" BasedOn="{StaticResource FlatButton}">
         <Setter Property="Background" Value="{StaticResource ControlQuietBrush}" />
         <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
@@ -67,7 +67,7 @@
         <Setter Property="FontSize" Value="12" />
     </Style>
 
-    <!-- Корзина в строке списка. Показывается при наведении на строку -->
+    <!-- Trash can in a list row. Shown when the row is hovered -->
     <Style x:Key="RowDeleteButton" TargetType="Button">
         <Setter Property="Width" Value="24" />
         <Setter Property="Height" Value="22" />
@@ -96,8 +96,8 @@
         </Setter>
     </Style>
 
-    <!-- Кнопка-фильтр под диаграммой. Выключенный тип гасится целиком:
-         и плашка, и кружок с названием. -->
+    <!-- Filter button under the chart. A hidden type is dimmed entirely:
+         both the chip and the circle with the name. -->
     <Style x:Key="LegendChip" TargetType="Button">
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />

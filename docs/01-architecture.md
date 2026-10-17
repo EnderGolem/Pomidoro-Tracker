@@ -1,8 +1,8 @@
-# Архитектура
+# Architecture
 
-## Главная мысль
+## The main idea
 
-Приложение разложено на слои, и зависимости между ними идут **только в одну сторону**:
+The application is split into layers, and dependencies between them point **only one way**:
 
 ```
 Views  ──►  ViewModels  ──►  Stats  ──►  Domain
@@ -13,103 +13,103 @@ Views  ──►  ViewModels  ──►  Stats  ──►  Domain
                        Localization
 ```
 
-Читается так:
+It reads like this:
 
-- **Domain** не знает ничего: ни про базу, ни про экраны, ни про WPF.
-- **Stats** знает только про Domain.
-- **Storage** знает про Domain (ему нужно, что именно сохранять) и больше ни про что.
-- **ViewModels** знают про всё перечисленное, но не знают про разметку.
-- **Views** знают только про ViewModels, и то через привязки.
+- **Domain** knows nothing: not the database, not the screens, not WPF.
+- **Stats** knows only about Domain.
+- **Storage** knows about Domain (it needs to know what exactly to save) and nothing else.
+- **ViewModels** know about all of the above, but not about the markup.
+- **Views** know only about ViewModels, and only through bindings.
 
-Смысл правила простой: чем ниже слой, тем проще его проверить. `Domain` и `Stats` —
-обычные классы с обычными методами, им не нужны ни окно, ни файл, ни диспетчер,
-поэтому они целиком покрыты тестами. Чем выше слой, тем меньше в нём логики:
-к разметке не остаётся ни одного вычисления.
+The point of the rule is simple: the lower the layer, the easier it is to test. `Domain` and `Stats` are
+ordinary classes with ordinary methods; they need no window, no file and no dispatcher,
+so they are fully covered by tests. The higher the layer, the less logic it has:
+by the time you reach the markup, not a single computation is left.
 
-Проверить правило можно глазами: в `Domain/` и `Stats/` нет ни одного `using System.Windows`,
-кроме `Stats/TypePalette.cs`, где лежат кисти для диаграммы.
+The rule can be checked by eye: `Domain/` and `Stats/` contain no `using System.Windows`
+at all, except `Stats/TypePalette.cs`, which holds the brushes for the chart.
 
-## Что где лежит
+## What lives where
 
-### `Domain/` — правила предметной области
+### `Domain/` — the rules of the subject area
 
-Таймер, сутки, периоды, типы работы, запись истории. Подробно — в [02-domain.md](02-domain.md).
+Timer, days, periods, work types, history entries. Details in [02-domain.md](02-domain.md).
 
-Здесь нет ни одного `async`, ни одного обращения наружу и ни одного изменяемого
-глобального состояния. Время приходит снаружи через `TimeProvider`.
+There is not a single `async`, not a single call to the outside world and not a single piece of mutable
+global state here. Time comes from outside through `TimeProvider`.
 
-### `Stats/` — счёт для экрана статистики
+### `Stats/` — computations for the statistics screen
 
-`StatsCalculator` превращает список записей в итоги, разбивку по дням и по типам.
-`ChartLayout` превращает секунды и доступные пиксели в высоты и ширины.
-Подробно — в [04-statistics.md](04-statistics.md).
+`StatsCalculator` turns a list of entries into totals and a breakdown by day and by type.
+`ChartLayout` turns seconds and available pixels into heights and widths.
+Details in [04-statistics.md](04-statistics.md).
 
 ### `Storage/` — SQLite
 
-`ISessionStore` — контракт «куда класть историю и настройки». `SqliteSessionStore` —
-единственная реализация. `AppSettings` — удобная обёртка над парами ключ-значение.
-`ISqlConsole` — отдельный контракт для консоли разработчика.
-Подробно — в [03-storage.md](03-storage.md).
+`ISessionStore` is the contract for "where to put history and settings". `SqliteSessionStore` is
+the only implementation. `AppSettings` is a convenient wrapper over key-value pairs.
+`ISqlConsole` is a separate contract for the developer console.
+Details in [03-storage.md](03-storage.md).
 
-### `Formatting/` — текст
+### `Formatting/` — text
 
-Всё, что превращает число или дату в строку на экране: `Format`, `Plural`,
-`SqlResultText`. Ни один `ToString` без явной культуры в проекте не встречается —
-иначе на машине с другой локалью поедут и разделитель дробной части, и календарь.
+Everything that turns a number or a date into an on-screen string: `Format`, `Plural`,
+`SqlResultText`. There is not a single `ToString` without an explicit culture in the project —
+otherwise on a machine with a different locale both the decimal separator and the calendar would go off.
 
-### `Localization/` — текст интерфейса
+### `Localization/` — interface text
 
-Весь русский и английский текст, текущий язык и запись `{loc:Text Ключ}` для разметки.
-`Strings` объявлен абстрактным классом, поэтому забытый перевод не компилируется.
-Подробно — в [10-localization.md](10-localization.md).
+All the Russian and English text, the current language and the `{loc:Text Key}` markup extension.
+`Strings` is declared as an abstract class, so a missing translation does not compile.
+Details in [10-localization.md](10-localization.md).
 
-### `Mvvm/` — минимальная основа
+### `Mvvm/` — a minimal foundation
 
-Четыре маленьких файла вместо библиотеки:
+Four small files instead of a library:
 
-| Файл | Зачем |
+| File | Why |
 |---|---|
-| `ObservableObject` | базовый класс с `PropertyChanged` и помощником `Set` |
-| `RelayCommand` | команда без параметра, с необязательной проверкой доступности |
-| `RelayCommand<T>` | команда с параметром (строка списка, тип в легенде) |
-| `ITicker` / `DispatcherTicker` | источник тиков для таймера |
+| `ObservableObject` | base class with `PropertyChanged` and a `Set` helper |
+| `RelayCommand` | a parameterless command with an optional can-execute check |
+| `RelayCommand<T>` | a command with a parameter (a list row, a type in the legend) |
+| `ITicker` / `DispatcherTicker` | tick source for the timer |
 
-Своё, а не готовый пакет, по одной причине: всё это помещается в сотню строк,
-читается целиком за пять минут и не требует генераторов кода. Подробнее —
-в [журнале решений](08-decisions.md).
+Home-grown rather than a ready-made package for one reason: all of it fits into a hundred lines,
+can be read in full in five minutes and needs no code generators. More in
+the [decision log](08-decisions.md).
 
-### `ViewModels/` — состояние экранов
+### `ViewModels/` — screen state
 
-Каждый экран — отдельный класс с свойствами, на которые подписана разметка,
-и командами, которые вызывают кнопки. Подробно — в [05-ui.md](05-ui.md).
+Each screen is a separate class with properties the markup binds to
+and commands the buttons invoke. Details in [05-ui.md](05-ui.md).
 
-### `Views/` и `Themes/` — разметка
+### `Views/` and `Themes/` — markup
 
-Окна, экраны и стили. Код за разметкой пустой, кроме трёх мест, где без него нельзя
-(см. [05-ui.md](05-ui.md#три-исключения)).
+Windows, screens and styles. Code-behind is empty, except in three places where it cannot be avoided
+(see [05-ui.md](05-ui.md#three-exceptions)).
 
-## Как приложение собирается при запуске
+## How the application is wired up at startup
 
-Единственное место, где слои знакомятся друг с другом, — `App.xaml.cs`.
-Это и есть точка сборки: ни один класс не создаёт себе зависимости сам,
-всё приходит через конструктор.
+The only place where the layers meet each other is `App.xaml.cs`.
+This is the composition root: no class creates its own dependencies,
+everything comes in through the constructor.
 
-`App.OnStartup` по шагам:
+`App.OnStartup` step by step:
 
-1. **Подписка на необработанные исключения.** Любая ошибка, долетевшая до диспетчера,
-   покажет сообщение и закроет приложение — вместо системного окна «программа не отвечает».
-2. **Открытие базы.** `TryOpenStore()` создаёт `SqliteSessionStore` по пути
-   `AppContext.BaseDirectory + pomodoro.db`. Если файл не открылся (нет прав, диск
-   только для чтения, файл повреждён) — показывается сообщение с причиной и
-   `Shutdown(1)`. Работать без базы приложению незачем.
-3. **Настройки.** `AppSettings` читает три значения из таблицы `Settings`.
-4. **Модели представления.** Создаётся `MainViewModel`, а он создаёт остальные четыре.
-   Сюда же передаются `TimeProvider.System` и `DispatcherTicker` с интервалом 100 мс.
-5. **Звук.** `Timer.PhaseFinished` подключается к `Chime.Play()` — здесь, а не внутри
-   модели, чтобы модели оставались без побочных эффектов и их можно было тестировать.
-6. **Трей.** `TrayIcon` с пунктами «Открыть» и «Выход».
-7. **Окно.** `MainWindow` с `DataContext = MainViewModel`, значок рисуется в памяти.
-8. **Перехват крестика.** `Closing` обрабатывается здесь же: окно прячется в трей.
+1. **Subscribing to unhandled exceptions.** Any error that reaches the dispatcher
+   shows a message and closes the application — instead of the system "program is not responding" window.
+2. **Opening the database.** `TryOpenStore()` creates a `SqliteSessionStore` at
+   `AppContext.BaseDirectory + pomodoro.db`. If the file could not be opened (no permissions, a read-only
+   disk, a corrupted file), a message with the reason is shown and
+   `Shutdown(1)` is called. The application has no reason to run without a database.
+3. **Settings.** `AppSettings` reads three values from the `Settings` table.
+4. **View models.** `MainViewModel` is created, and it creates the other four.
+   `TimeProvider.System` and a `DispatcherTicker` with a 100 ms interval are passed in here as well.
+5. **Sound.** `Timer.PhaseFinished` is wired to `Chime.Play()` — here rather than inside
+   the model, so that the models stay free of side effects and can be tested.
+6. **Tray.** `TrayIcon` with "Open" and "Exit" items.
+7. **Window.** `MainWindow` with `DataContext = MainViewModel`; the icon is drawn in memory.
+8. **Intercepting the close button.** `Closing` is handled right here: the window hides into the tray.
 
 ```csharp
 _viewModel = new MainViewModel(store, settings, TimeProvider.System, new DispatcherTicker(TickInterval));
@@ -117,85 +117,85 @@ _viewModel.Timer.PhaseFinished += (_, _) => Chime.Play();
 _viewModel.SqlConsoleRequested += (_, _) => ShowSqlConsole(store);
 ```
 
-Контейнера внедрения зависимостей нет и не нужно: граф маленький, и видеть его целиком
-в одном методе полезнее, чем искать по атрибутам.
+There is no dependency injection container and none is needed: the graph is small, and seeing it whole
+in one method is more useful than hunting through attributes.
 
-## Жизненный цикл окна
+## Window lifecycle
 
-`ShutdownMode` выставлен в `OnExplicitShutdown`, то есть закрытие окон само по себе
-приложение не завершает. Это важно, потому что окно прячется в трей, а не закрывается.
+`ShutdownMode` is set to `OnExplicitShutdown`, meaning closing windows does not by itself
+quit the application. This matters because the window hides into the tray rather than closing.
 
-| Событие | Что происходит |
+| Event | What happens |
 |---|---|
-| Крестик | `OnMainWindowClosing` отменяет закрытие, прячет окно и убирает его из панели задач |
-| Клик по значку в трее | `RestoreFromTray`: окно показывается, разворачивается, активируется и **перечитывает открытый экран** |
-| «Выход» в меню трея | `ExitApplication`: ставит `_exiting = true` и вызывает `Shutdown()` |
-| Завершение сеанса Windows | `OnSessionEnding` ставит `_exiting = true`, дальше всё идёт обычным порядком |
-| Необработанное исключение | сообщение с типом и текстом ошибки, затем `ExitApplication` |
+| Close button | `OnMainWindowClosing` cancels the close, hides the window and removes it from the taskbar |
+| Click on the tray icon | `RestoreFromTray`: the window is shown, restored, activated and **reloads the open screen** |
+| "Exit" in the tray menu | `ExitApplication`: sets `_exiting = true` and calls `Shutdown()` |
+| Windows session ending | `OnSessionEnding` sets `_exiting = true`, and everything else proceeds as usual |
+| Unhandled exception | a message with the error type and text, then `ExitApplication` |
 
-Флаг `_exiting` — единственное, что отличает «спрятать» от «закрыть». Без обработки
-`OnSessionEnding` окно отказывалось бы закрываться при завершении сеанса.
+The `_exiting` flag is the only thing that distinguishes "hide" from "close". Without handling
+`OnSessionEnding`, the window would refuse to close when the session ends.
 
-Терять при аварийном выходе нечего: настройки пишутся в базу сразу при изменении,
-а каждая помидорка — в момент завершения.
+Nothing is lost on a crash: settings are written to the database immediately on change,
+and every pomodoro at the moment it finishes.
 
-## Как данные доходят до экрана
+## How data reaches the screen
 
-### Завершилась помидорка
+### A pomodoro finished
 
 ```
-DispatcherTicker (раз в 100 мс)
+DispatcherTicker (every 100 ms)
     └─► TimerViewModel.Advance()
           └─► PomodoroTimer.Advance()  →  TimerStep { Event, Completed }
-                ├─ Completed есть  →  TimerViewModel.WorkCompleted
+                ├─ Completed is set  →  TimerViewModel.WorkCompleted
                 │                        └─► MainViewModel.OnWorkCompleted
                 │                              ├─ store.Add(session)
                 │                              └─ ReloadVisibleScreen()
                 └─ Event ≠ Nothing  →  TimerViewModel.PhaseFinished  →  Chime.Play()
 ```
 
-Обрати внимание: таймер не знает ни про базу, ни про звук. Он возвращает описание
-того, что случилось, а решают это уже наверху.
+Note that the timer knows about neither the database nor the sound. It returns a description
+of what happened, and the layers above decide what to do about it.
 
-### Открыли статистику
+### Statistics opened
 
 ```
 MainViewModel.IsStatsVisible = true
     └─► StatsViewModel.Reload()
           ├─ store.GetTypeCatalog()
-          ├─ StatsPeriods.Resolve(период, сегодня)  →  DayRange
-          ├─ store.GetRange(range, boundary)        →  список записей
+          ├─ StatsPeriods.Resolve(period, today)    →  DayRange
+          ├─ store.GetRange(range, boundary)        →  list of entries
           └─ Refresh(rebuildList: true)
                 ├─ StatsCalculator.Build(...)       →  StatsSummary
                 ├─ BuildLegend(summary)             →  ObservableCollection<LegendItemViewModel>
                 ├─ BuildChart()                     →  Columns + GridLines
-                └─ List.Load(видимые записи)        →  строки списка
+                └─ List.Load(visible entries)       →  list rows
 ```
 
-Разметка подписана на эти коллекции и свойства — больше она ничего не делает.
+The markup binds to these collections and properties — and does nothing else.
 
-### Поправили минуты в строке
+### Minutes edited in a row
 
 ```
-TextBox теряет фокус
+TextBox loses focus
     └─► SessionRowViewModel.Minutes = "40"
-          ├─ разбор и проверка границ (0…1440)
+          ├─ parsing and range check (0…1440)
           ├─ store.UpdateDuration(id, 2400)
           └─ Changed
                 └─► StatsViewModel.OnRowChanged
-                      ├─ подменяет запись в своём кэше (record with { ... })
+                      ├─ replaces the entry in its cache (record with { ... })
                       └─ Refresh(rebuildList: false)
 ```
 
-Список намеренно **не** перестраивается: иначе строка, которую только что правили,
-уехала бы из-под курсора. Перестраивается он только тогда, когда меняется сам набор
-строк — при перезагрузке, удалении записи или переключении фильтра легенды.
+The list is deliberately **not** rebuilt: otherwise the row that was just edited
+would slide out from under the cursor. It is rebuilt only when the set of rows
+itself changes — on reload, on deleting an entry or on toggling a legend filter.
 
-### Выполнили запрос в консоли
+### A query ran in the console
 
 ```
-SqlWindow (кнопка, F5 или Ctrl+Enter)
-    └─► SqlConsoleViewModel.Run(выделение или весь текст)
+SqlWindow (button, F5 or Ctrl+Enter)
+    └─► SqlConsoleViewModel.Run(selection or the whole text)
           ├─ ISqlConsole.Execute(sql)       →  SqlQueryResult
           ├─ Output = SqlResultText.Render(result)
           ├─ Status = SqlResultText.Status(result)
@@ -205,17 +205,17 @@ SqlWindow (кнопка, F5 или Ctrl+Enter)
                          catch { console.ReportRefreshFailure(ex) }
 ```
 
-Запрос мог удалить таблицу, на которой держится экран, поэтому обновление обёрнуто
-в `try`. Ошибка дописывается в вывод самой консоли — приложение остаётся живым.
+The query may have dropped a table the screen relies on, so the refresh is wrapped
+in a `try`. The error is appended to the console's own output — the application stays alive.
 
-## Что считать нарушением архитектуры
+## What counts as an architecture violation
 
-Признаки того, что что-то пошло не туда:
+Signs that something has gone wrong:
 
-- `using System.Windows` появился в `Domain/`;
-- `using Microsoft.Data.Sqlite` появился где-то кроме `Storage/`;
-- в разметке завелось вычисление (конвертер со сложной логикой, арифметика в привязке);
-- модель представления начала напрямую создавать окно;
-- в `Views/*.xaml.cs` появился код, который не про ввод и не про размеры.
+- `using System.Windows` showed up in `Domain/`;
+- `using Microsoft.Data.Sqlite` showed up anywhere outside `Storage/`;
+- a computation crept into the markup (a converter with complex logic, arithmetic in a binding);
+- a view model started creating a window directly;
+- `Views/*.xaml.cs` gained code that is about neither input nor sizes.
 
-Любой из этих пунктов — повод переложить код на слой ниже.
+Any of these is a reason to move the code one layer down.

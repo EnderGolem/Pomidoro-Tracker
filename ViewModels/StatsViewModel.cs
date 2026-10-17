@@ -11,15 +11,15 @@ namespace Pomidoro.ViewModels;
 
 internal sealed class StatsViewModel : ObservableObject
 {
-    // Подпись оси выше линии на половину своей высоты, иначе цифра съезжает вниз.
+    // The axis label sits half its height above the line, otherwise the number drifts down.
     private const double LabelHalfHeight = 7.0;
 
     private readonly ISessionStore _store;
     private readonly AppSettings _settings;
     private readonly TimeProvider _time;
 
-    // Выключенные типы живут только в памяти: это взгляд на данные, а не настройка,
-    // поэтому после перезапуска показываем снова всё.
+    // Hidden types live only in memory: this is a view of the data, not a setting,
+    // so after a restart everything is shown again.
     private readonly HashSet<string> _hiddenTypes = WorkTypes.NewSet();
 
     private List<WorkSession> _sessions = [];
@@ -72,8 +72,8 @@ internal sealed class StatsViewModel : ObservableObject
         get => _selectedPeriod;
         set
         {
-            // null приходит от ComboBox, когда он теряет выбранный элемент;
-            // держать период пустым нельзя — на нём считается весь экран.
+            // null comes from the ComboBox when it loses its selected item;
+            // the period can't be left empty: the whole screen is computed from it.
             if (value is null || !Set(ref _selectedPeriod, value))
             {
                 return;
@@ -126,8 +126,8 @@ internal sealed class StatsViewModel : ObservableObject
         Refresh(rebuildList: true);
     }
 
-    // Обычный клик оставляет только нажатый тип; повторный клик по единственному
-    // включённому возвращает все; Shift+клик добавляет или убирает один тип.
+    // A plain click keeps only the clicked type; clicking the only visible
+    // type again brings back all; Shift+click adds or removes one type.
     public void ToggleType(string type, bool shiftHeld)
     {
         List<string> allTypes = [.. Legend.Select(item => item.Type)];
@@ -159,8 +159,8 @@ internal sealed class StatsViewModel : ObservableObject
         Refresh(rebuildList: true);
     }
 
-    // Размер панели меняется при каждом движении рамки окна, поэтому здесь только
-    // пересчёт геометрии: ни запроса к базе, ни пересборки списка.
+    // The panel size changes with every move of the window border, so only
+    // the geometry is recomputed here: no database query, no list rebuild.
     public void SetPlotSize(double hostWidth, double hostHeight)
     {
         _plotWidth = ChartLayout.PlotWidth(hostWidth);
@@ -289,8 +289,8 @@ internal sealed class StatsViewModel : ObservableObject
         return segments;
     }
 
-    // Список не перестраиваем: правка пришла из него самого, и строка под курсором
-    // уехала бы прямо во время редактирования.
+    // The list isn't rebuilt: the edit came from the list itself, and the row under the cursor
+    // would jump away right in the middle of editing.
     private void OnRowChanged(object? sender, SessionRowViewModel row)
     {
         int index = _sessions.FindIndex(session => session.Id == row.Id);

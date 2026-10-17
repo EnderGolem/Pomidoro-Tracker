@@ -2,14 +2,14 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 
-// System.Drawing и System.Windows.Media объявляют одинаковые имена (Color, Point),
-// поэтому из второго берём только то, что нужно, и по полному имени.
+// System.Drawing and System.Windows.Media declare the same names (Color, Point),
+// so only what's needed is taken from the latter, by its full name.
 using ImageSource = System.Windows.Media.ImageSource;
 
 namespace Pomidoro.Tray;
 
-// Значок приложения рисуется в памяти, чтобы не таскать с собой .ico-файл.
-// Нужен в двух видах: System.Drawing.Icon для трея и ImageSource для окон.
+// The app icon is drawn in memory so there's no .ico file to ship.
+// It's needed in two forms: System.Drawing.Icon for the tray and ImageSource for windows.
 internal static class TomatoIcon
 {
     private const int Size = 32;
@@ -26,7 +26,7 @@ internal static class TomatoIcon
 
         try
         {
-            // Icon.FromHandle хэндлом не владеет, поэтому снимаем копию и освобождаем оригинал сами.
+            // Icon.FromHandle doesn't own the handle, so we take a copy and free the original ourselves.
             using Icon borrowed = Icon.FromHandle(handle);
 
             return (Icon)borrowed.Clone();
@@ -85,8 +85,8 @@ internal static class TomatoIcon
         return bitmap;
     }
 
-    // Не LibraryImport: сгенерированный им код требует AllowUnsafeBlocks,
-    // а ради двух вызовов включать unsafe на весь проект не стоит.
+    // Not LibraryImport: the code it generates requires AllowUnsafeBlocks,
+    // and enabling unsafe for the whole project isn't worth it for two calls.
     [DllImport("user32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]

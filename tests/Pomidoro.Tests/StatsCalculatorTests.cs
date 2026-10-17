@@ -36,8 +36,8 @@ public class StatsCalculatorTests
         Assert.Equal(0L, summary.Days.Single(day => day.Day == new DateOnly(2026, 10, 15)).Seconds);
     }
 
-    // Главный случай: справочник сравнивает имена без учёта регистра, значит и статистика
-    // обязана считать «Работа» и «работа» одним типом, а не двумя.
+    // The main case: the catalog compares names case-insensitively, so statistics too
+    // must count "Работа" and "работа" as one type, not two.
     [Fact]
     public void Same_type_written_in_different_case_stays_one_type()
     {
@@ -69,7 +69,7 @@ public class StatsCalculatorTests
         Assert.Equal(10 * 60, summary.TotalSeconds);
         Assert.Equal(1, summary.Count);
 
-        // В легенде выключенный тип остаётся, иначе его нечем было бы включить обратно.
+        // A hidden type stays in the legend, otherwise there'd be no way to turn it back on.
         Assert.Equal(2, summary.AllTypes.Count);
     }
 
@@ -122,8 +122,8 @@ public class StatsCalculatorTests
         Assert.Equal(["Рисование", "Работа"], day.ByType.Select(total => total.Type).ToArray());
     }
 
-    // Медиана считается по отработанным дням: в неделе с двумя рабочими днями
-    // пять пустых не должны превращать её в ноль.
+    // The median is computed over worked days: in a week with two working days
+    // five empty ones must not turn it into zero.
     [Fact]
     public void Median_ignores_days_without_work()
     {

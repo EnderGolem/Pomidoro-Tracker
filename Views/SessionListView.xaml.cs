@@ -5,7 +5,7 @@ using System.Windows.Input;
 
 namespace Pomidoro.Views;
 
-// Код здесь только про ввод с клавиатуры: что делать с набранным, решает модель строки.
+// Code here is only about keyboard input: the row model decides what to do with the text.
 public partial class SessionListView : UserControl
 {
     public SessionListView()
@@ -18,9 +18,9 @@ public partial class SessionListView : UserControl
         e.Handled = !Digits().IsMatch(e.Text);
     }
 
-    // Привязка отдаёт значение в модель по потере фокуса, а Enter фокус не уводит.
-    // Keyboard.ClearFocus() здесь не годится: он снимает фокус клавиатуры, но не
-    // логический, и событие LostFocus не наступает — правка молча не доходила.
+    // The binding pushes the value to the model on focus loss, and Enter doesn't move focus.
+    // Keyboard.ClearFocus() won't do here: it clears keyboard focus but not
+    // logical focus, so LostFocus never fires and the edit was silently lost.
     private void OnCellKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter || sender is not TextBox box)

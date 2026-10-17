@@ -1,333 +1,333 @@
-# Журнал решений
+# Decision log
 
-Здесь записано, почему сделано именно так. Читать, когда код выглядит странно
-и хочется «исправить» — возможно, это уже пробовали.
+This records why things are done the way they are. Read it when the code looks odd
+and you feel like "fixing" it — it may have been tried already.
 
-Формат: решение → почему → что рассматривалось вместо него.
+Format: decision → why → what was considered instead.
 
 ---
 
-## Хранилище и данные
+## Storage and data
 
-### База лежит рядом с `.exe`, а не в `%APPDATA%`
+### The database sits next to the `.exe`, not in `%APPDATA%`
 
-Папку приложения можно скопировать целиком, и история переедет вместе с ней;
-бэкап — это копия одного файла.
+The application folder can be copied as a whole, and the history moves along with it;
+a backup is a copy of a single file.
 
-*Вместо:* `%APPDATA%\Pomidoro\` — «правильнее» по рекомендациям, но тогда копирование
-папки перестало бы работать, а приложение рассчитано на то, что его носят с собой
-на флешке.
+*Instead:* `%APPDATA%\Pomidoro\` — "more correct" by the guidelines, but then copying
+the folder would stop working, and the application is meant to be carried around
+on a flash drive.
 
-*Цена:* если положить `.exe` в `Program Files`, база окажется в каталоге без прав
-на запись. Приложение в этом случае покажет внятную ошибку и закроется.
+*Cost:* if the `.exe` is put into `Program Files`, the database ends up in a directory without write
+access. In that case the application shows a clear error and closes.
 
-### Время хранится текстом в формате `"O"`
+### Time is stored as text in the `"O"` format
 
-Сортируется лексикографически (то есть `ORDER BY EndUtc` работает как надо)
-и читается глазами при ручных запросах.
+It sorts lexicographically (so `ORDER BY EndUtc` works as it should)
+and is human-readable in manual queries.
 
-*Вместо:* Unix-время числом — компактнее и быстрее, но в консоли вместо даты видно
-`1760000000`, а приложение целиком про ручные запросы к своей базе.
+*Instead:* Unix time as a number — more compact and faster, but the console would show
+`1760000000` instead of a date, and the application is all about manual queries to its own database.
 
-### Выборки идут по `EndUtc`, а не по `LocalDate`
+### Queries filter by `EndUtc`, not by `LocalDate`
 
-Граница суток настраивается, и значение `LocalDate`, записанное при старых настройках,
-не знает о новых. Чтобы история пересчитывалась под новое правило целиком,
-единственным источником правды должен быть момент в UTC.
+The day boundary is configurable, and a `LocalDate` value written under old settings
+knows nothing about the new ones. For the history to be recalculated under a new rule as a whole,
+the only source of truth has to be the moment in UTC.
 
-Колонка `LocalDate` оставлена ради удобных ручных запросов (`WHERE LocalDate LIKE '2026%'`)
-и как справочная — приложение по ней ничего не выбирает.
+The `LocalDate` column is kept for convenient manual queries (`WHERE LocalDate LIKE '2026%'`)
+and for reference — the application does not select anything by it.
 
-*Вместо:* убрать колонку совсем. Отказались: она не мешает, а запросы из README
-с ней читаются лучше.
+*Instead:* drop the column altogether. Rejected: it does no harm, and the queries in the README
+read better with it.
 
-### `Pooling = false` в строке подключения
+### `Pooling = false` in the connection string
 
-С включённым пулом `Dispose` не закрывает файл, а возвращает соединение в пул, и базу
-нельзя ни удалить, ни скопировать сразу после закрытия приложения. Соединение здесь
-одно и живёт всё время работы, так что выигрывать пулу нечего.
+With pooling on, `Dispose` does not close the file but returns the connection to the pool, and the database
+can be neither deleted nor copied right after the application closes. There is a single connection here
+that lives for the whole run, so the pool has nothing to gain.
 
-Нашли это тесты: удаление временной папки падало с «файл занят другим процессом».
+The tests found this: deleting the temporary folder failed with "the file is being used by another process".
 
-### Регистр типов сравнивается в C#, а не в SQL
+### Type case is compared in C#, not in SQL
 
-Встроенный в SQLite `COLLATE NOCASE` сворачивает регистр только для латиницы `A-Z`.
-Для кириллицы он бесполезен: «созвон» и «СОЗВОН» считаются разными словами.
+SQLite's built-in `COLLATE NOCASE` folds case only for the Latin `A-Z`.
+For Cyrillic it is useless: «созвон» and «СОЗВОН» are treated as different words.
 
-*Вместо:* `UNIQUE COLLATE NOCASE` в схеме — выглядит аккуратнее, но не работает
-для русских названий, то есть для всех реальных.
+*Instead:* `UNIQUE COLLATE NOCASE` in the schema — looks neater, but does not work
+for Russian names, that is, for all the real ones.
 
-### История не переписывается при показе
+### History is not rewritten when shown
 
-Приведение типа к написанию из справочника происходит **только при чтении для экрана**.
-В базе остаётся ровно то, что туда попало.
+Bringing a type to its spelling from the catalog happens **only when reading for the screen**.
+The database keeps exactly what was put into it.
 
-*Вместо:* нормализовать записи один раз при запуске. Отказались: молчаливая правка
-истории — последнее, чего ждёшь от трекера. Если захочется, это делается одной
-командой в консоли:
+*Instead:* normalize the records once at startup. Rejected: silently editing
+history is the last thing you expect from a tracker. If you want it, it takes a single
+command in the console:
 `UPDATE WorkSessions SET Type = 'Работа' WHERE lower(Type) = 'работа';`
 
-### Удаление записи — без подтверждения
+### Deleting an entry — without confirmation
 
-Корзина появляется только при наведении на строку; диалог на каждое действие
-в маленьком списке раздражает сильнее, чем редкая ошибка.
+The trash icon appears only when hovering over a row; a dialog for every action
+in a small list is more annoying than a rare mistake.
 
-*Цена:* отменить удаление нельзя. Это осознанный размен, и он отмечен в README.
-
----
-
-## Домен
-
-### Таймер не тикает сам
-
-`PomodoroTimer` умеет только считать и отвечать на вопросы; тики ему присылает
-`TimerViewModel`, а время — `TimeProvider`.
-
-Благодаря этому полный цикл с паузами проверяется тестом мгновенно, без единой
-настоящей секунды ожидания.
-
-*Вместо:* `DispatcherTimer` внутри домена (как было раньше) — тогда доменный класс
-тянет за собой WPF и не проверяется вовсе.
-
-### Два источника времени: `TimeProvider` и `ITicker`
-
-Это не дублирование. `TimeProvider` отвечает за «сколько прошло» — вопрос домена.
-`ITicker` отвечает за «когда пересчитать экран» — вопрос интерфейса. Разделение
-позволяет менять частоту перерисовки, не трогая точность отсчёта.
-
-### В историю пишется плановая длительность
-
-Тик приходит раз в 100 мс, поэтому момент «ровно ноль» всегда проскакивается.
-Если писать измеренное, в базе копились бы 1500,07 секунды вместо 1500.
-
-При досрочной остановке пишется измеренное — там плановая длительность бессмысленна.
-
-### `Advance()` возвращает `TimerStep`, а не поднимает события
-
-Вызывающий код читается сверху вниз одним куском, а тест просто сравнивает результат.
-
-*Вместо:* события `WorkFinished`/`RestFinished` на самом таймере — пришлось бы
-подписываться и следить за порядком вызовов.
-
-### Пустой тип и «Без типа» — разные ключи
-
-Ключ группировки у записи без типа — пустая строка, подпись подставляется только
-при показе. Иначе тип, который пользователь назвал бы «Без типа», сливался бы
-с настоящими пустыми.
-
-На всякий случай такое имя (и прочерк) в справочник просто не пускают.
+*Cost:* a deletion cannot be undone. This is a deliberate trade-off, and it is noted in the README.
 
 ---
 
-## Статистика
+## Domain
 
-### Медиана считается только по отработанным дням
+### The timer does not tick by itself
 
-В месяце с шестью рабочими днями из тридцати медиана по всем дням равна нулю
-и не говорит ничего. Интересен вопрос «сколько я обычно работаю в рабочий день».
+`PomodoroTimer` can only count and answer questions; ticks are sent to it by
+`TimerViewModel`, and time comes from `TimeProvider`.
 
-*Вместо:* медиана по всем дням периода — честнее арифметически, бесполезнее на практике.
-Решение спорное и записано сюда именно поэтому.
+Thanks to this, a full cycle with pauses is checked by a test instantly, without a single
+real second of waiting.
 
-### Медиана возвращает `long?`
+*Instead:* a `DispatcherTimer` inside the domain (as it used to be) — then the domain class
+drags WPF along and cannot be tested at all.
 
-Ноль — законное значение: длительность записи можно поправить на 0 минут. Поэтому
-«данных нет» и «вышло ноль» различаются типом, а не значением.
+### Two sources of time: `TimeProvider` and `ITicker`
 
-### Цвет закреплён за порядком типа в справочнике
+This is not duplication. `TimeProvider` answers "how much time has passed" — a domain question.
+`ITicker` answers "when to recompute the screen" — a UI question. The split
+makes it possible to change the redraw rate without touching the accuracy of the countdown.
 
-Порядок справочника — это порядок добавления, он устойчив. Если сортировать типы
-по сумме часов, цвет прыгал бы при каждом переключении периода; если по алфавиту —
-перекрашивался бы при добавлении нового типа.
+### The planned duration goes into the history
 
-### Легенда показывает выключенные типы
+A tick comes every 100 ms, so the "exactly zero" moment is always overshot.
+If the measured value were written, the database would accumulate 1500.07 seconds instead of 1500.
 
-Иначе выключенный тип исчезал бы с экрана и включить его обратно было бы нечем.
-Поэтому `StatsCalculator` считает список типов **до** применения фильтра.
+On an early stop the measured value is written — the planned duration is meaningless there.
 
-### Shift+клик по последнему включённому типу гасит всё
+### `Advance()` returns a `TimerStep` instead of raising events
 
-Экран показывает ноль часов и «За этот период ничего не отработано». Это оставлено
-буквальным: правило «Shift переключает один тип» работает без исключений, а состояние
-очевидно и легко отменяется следующим кликом.
+The calling code reads top to bottom in one piece, and a test simply compares the result.
 
-### Порядок сегментов в столбике — от длинного к короткому
+*Instead:* `WorkFinished`/`RestFinished` events on the timer itself — that would mean
+subscribing and keeping track of the call order.
 
-Крупные куски снизу, мелкие сверху: столбик меньше рябит и его проще читать.
+### An empty type and "No type" are different keys
 
----
+The grouping key of an entry without a type is an empty string; the label is substituted only
+when shown. Otherwise a type the user happened to name "No type" would merge
+with the truly empty ones.
 
-## Интерфейс
-
-### MVVM без библиотеки
-
-`Mvvm/` — четыре файла примерно на сотню строк: базовый класс с уведомлениями,
-две команды и источник тиков.
-
-*Вместо:* `CommunityToolkit.Mvvm` с генераторами кода. Отказались ради читаемости:
-в проекте, который должен быть понятен при чтении сверху вниз, атрибут, за которым
-прячется сгенерированный код, работает против цели. Сэкономил бы он десятки строк,
-а не сотни.
-
-### Состояние экрана — булево свойство, а не `Visibility`
-
-Раньше «какой экран открыт» выяснялось проверкой `StatsView.Visibility == Visible`
-в пяти местах кода. Сейчас это `MainViewModel.IsStatsVisible`, а видимость получается
-из него штатным конвертером.
-
-### Команды пересчитывают доступность явно
-
-`RaiseCanExecuteChanged()` вызывается там, где состояние изменилось.
-
-*Вместо:* `CommandManager.RequerySuggested` — WPF опрашивал бы команды сам при любом
-действии пользователя. Работает «магически» и скрывает, кто на самом деле включает кнопку.
-
-### Плашка легенды — `Button`, а не `ToggleButton`
-
-`ToggleButton` переключает себя сам, до того как модель решит, что делать с фильтром,
-и на кадр показывает неправду. Здесь включённость рисуется `DataTrigger` по данным.
-
-### Модель представления знает про `Keyboard.Modifiers`
-
-`ToggleTypeCommand` сам выясняет, зажат ли Shift. Слой моделей и так знает про WPF
-(в нём кисти для диаграммы), зато метод `ToggleType(type, shiftHeld)` остаётся
-обычным и проверяется тестом напрямую.
-
-*Вместо:* обработчик в коде за разметкой — пришлось бы держать код там, где его
-не ждёшь, ради одного флага.
-
-### Список не перестраивается после правки строки
-
-Иначе строка, которую только что правили, уехала бы из-под курсора. Перестройка
-происходит только при смене набора строк: перезагрузка, удаление, фильтр легенды.
-
-### Поля строки заполняются в конструкторе напрямую
-
-Присваивание через свойства выглядело бы как правка и записалось бы в базу при первой
-же отрисовке списка. Это была настоящая ошибка прежней версии, и на неё есть тест.
-
-### Размер диаграммы приходит из кода за разметкой
-
-`ActualWidth` только для чтения, привязать его нечем. Два обработчика
-(`SizeChanged` и `DataContextChanged`) — потому что размер и модель приходят
-в непредсказуемом порядке; с одним только `SizeChanged` диаграмма один раз строилась
-с нулевой шириной и такой и оставалась.
-
-*Вместо:* присоединённое свойство-наблюдатель — это сорок строк инфраструктуры ради
-того же результата.
-
-### Все цвета — в одном словаре
-
-В разметке нет ни одного шестнадцатеричного значения. Раньше их было семнадцать,
-причём два почти одинаковых (`#FF262A35` и `#FF272A35`) — разница в единицу
-по одному каналу, глазом неразличимая и почти наверняка случайная.
-
-### Ширины колонок — через `SharedSizeGroup`
-
-Заголовок и строки состоят в одних группах и не могут разъехаться. Раньше ширины
-были прописаны числами в четырёх местах.
+Just in case, such a name (and a dash) is simply not allowed into the catalog.
 
 ---
 
-## Языки
+## Statistics
 
-### Строки — абстрактный класс, а не `.resx`
+### The median is computed over worked days only
 
-Забытый перевод должен быть ошибкой сборки. У `Strings` все подписи объявлены
-абстрактными, поэтому новый ключ не даст собраться, пока его не переведут оба языка.
+In a month with six working days out of thirty, the median over all days is zero
+and says nothing. The interesting question is "how much do I usually work on a working day".
 
-*Вместо:* файлы ресурсов `.resx` — стандартный для .NET способ, с тулингом для
-переводчиков и сателлитными сборками. Отказались: переводчиков тут нет, а недостающий
-ключ в `.resx` возвращает пустую строку молча и уже во время работы.
+*Instead:* the median over all days of the period — more honest arithmetically, more useless in practice.
+The decision is debatable, and that is exactly why it is recorded here.
 
-### Язык выбирается при сборке, а не в настройках
+### The median returns `long?`
 
-Русская и английская версии — два отдельных `.exe`. Выпадающий список языков в меню
-под шестерёнкой выглядел чужеродно, а две сборки честнее: человек скачивает свою
-и чужую не видит.
+Zero is a legitimate value: an entry's duration can be corrected to 0 minutes. So
+"no data" and "it came out as zero" differ by type, not by value.
 
-Побочная выгода оказалась больше ожидаемой: из кода ушли событие смены языка,
-подписки на него в пяти моделях, настройка `Language` в базе, тип `LanguageOption`
-и пересборка списка периодов. Переключение на лету стоило заметно дороже, чем
-казалось, пока его не удалили.
+### A color is tied to the type's position in the catalog
 
-*Цена:* чтобы сменить язык, надо скачать другой файл. База при этом общая — обе
-версии читают и пишут одну и ту же схему.
+The catalog order is the order of addition, and it is stable. If types were sorted
+by total hours, colors would jump on every period switch; if alphabetically,
+they would be repainted whenever a new type is added.
 
-### Константу языка добавляет цель, а не условный `PropertyGroup`
+### The legend shows disabled types
 
-`AppLanguage` приходит из профиля публикации, а профиль импортируется **после** того,
-как тело `.csproj` вычислено. Условие в `PropertyGroup` его не увидит: первая
-английская сборка вышла русской именно поэтому. Цель `AddLanguageConstant`
-выполняется позже всех импортов.
+Otherwise a disabled type would disappear from the screen and there would be nothing to turn it back on with.
+That is why `StatsCalculator` computes the list of types **before** applying the filter.
 
-### Даты остались европейскими в обоих языках
+### Shift+click on the last enabled type turns everything off
 
-`16.10.2026` и на английском. Приложение личное, формат привычен, а перевод дат
-удвоил бы тесты на форматирование, ничего не дав.
+The screen shows zero hours and "Nothing was worked in this period". This is left
+literal: the rule "Shift toggles one type" works without exceptions, and the state
+is obvious and easily undone by the next click.
 
-### Список периодов не пересобирается при смене языка
+### Segment order in a bar — from longest to shortest
 
-Пункты остаются теми же объектами, меняются только их подписи. Подменить список
-нельзя: `ComboBox` не найдёт в новом списке выбранный элемент и выставит `null`,
-а на пустом периоде считается весь экран. Ровно на этом экран статистики один раз
-и упал — теперь на это есть тест.
-
-### Служебное имя «без типа» запрещено сразу в обоих языках
-
-`WorkTypes.ReservedNames` не зависит от текущего языка. Иначе тип, заведённый
-в английском интерфейсе как «Без типа», после переключения на русский слился бы
-с корзиной для записей без типа.
+Large chunks at the bottom, small ones on top: the bar is less noisy and easier to read.
 
 ---
 
-## Проект
+## Interface
 
-### Всё `internal`
+### MVVM without a library
 
-Это приложение, а не библиотека, наружу ничего не отдаётся. Тесты видят внутренние
-типы через `InternalsVisibleTo`.
+`Mvvm/` is four files of about a hundred lines in total: a base class with notifications,
+two commands and a tick source.
 
-Побочная выгода: правило `CA1062` (проверка аргументов на `null`) выключено
-обоснованно — вызовов извне сборки просто не бывает.
+*Instead:* `CommunityToolkit.Mvvm` with source generators. Rejected for the sake of readability:
+in a project that should be understandable when read top to bottom, an attribute hiding
+generated code works against the goal. It would have saved tens of lines,
+not hundreds.
 
-### Предупреждения — ошибки сборки
+### Screen state is a boolean property, not `Visibility`
 
-«Собралось» означает «собралось начисто». Три правила выключены в `.editorconfig`
-с объяснениями, четыре места подавлены точечно атрибутом с обоснованием.
+"Which screen is open" used to be found out by checking `StatsView.Visibility == Visible`
+in five places in the code. Now it is `MainViewModel.IsStatsVisible`, and visibility is derived
+from it by the standard converter.
 
-### XML-документации нет
+### Commands re-evaluate their availability explicitly
 
-Объяснения живут в `docs/` и в коротких комментариях там, где поведение неочевидно.
-Документирующий комментарий над `public string Type { get; }`, который пересказывает
-имя свойства, ничего не добавляет, а устаревает первым.
+`RaiseCanExecuteChanged()` is called where the state has changed.
 
-### Комментарии отвечают на «почему»
+*Instead:* `CommandManager.RequerySuggested` — WPF would poll the commands itself on every
+user action. It works "magically" and hides who actually enables the button.
 
-Если комментарий пересказывает код — он лишний. Если объясняет, почему выбран
-неочевидный способ, — он нужен, и таких в проекте около тридцати.
+### A legend chip is a `Button`, not a `ToggleButton`
 
-### Тесты лежат внутри папки проекта
+`ToggleButton` toggles itself before the model decides what to do with the filter,
+and shows something untrue for a frame. Here the enabled state is drawn by a `DataTrigger` from the data.
 
-`tests/Pomidoro.Tests/`, а не отдельным деревом рядом. Так репозиторий остаётся
-плоским и путь к `.exe` не меняется.
+### The view model knows about `Keyboard.Modifiers`
 
-*Цена:* в `Pomidoro.csproj` пришлось явно исключить `tests\**` из компиляции,
-иначе SDK забрал бы эти файлы в основной проект.
+`ToggleTypeCommand` finds out by itself whether Shift is held. The view model layer already knows about WPF
+(it holds the brushes for the chart), and in return the `ToggleType(type, shiftHeld)` method stays
+ordinary and is tested directly.
 
-### WinForms в WPF-проекте
+*Instead:* a handler in the code-behind — that would mean keeping code where you
+don't expect it, for the sake of a single flag.
 
-Только ради `NotifyIcon` — своего значка в трее у WPF нет. Неявные `using` WinForms
-обязательно сняты, иначе одноимённые типы конфликтуют по всему коду.
+### The list is not rebuilt after a row is edited
 
-### Значок и звук рисуются в памяти
+Otherwise the row that was just edited would slide out from under the cursor. Rebuilding
+happens only when the set of rows changes: reload, deletion, legend filter.
 
-Ни `.ico`, ни `.wav` рядом с приложением не нужны, и системные звуки пользователя
-ни при чём. Для single-file-публикации это ещё и один файл вместо трёх.
+### Row fields are filled directly in the constructor
 
-### Консоль разработчика вообще существует
+Assigning through properties would look like an edit and would be written to the database on the very first
+render of the list. This was a real bug in the previous version, and there is a test for it.
 
-Инструмент для себя: посмотреть историю, починить опечатку, проверить гипотезу.
-Проверок в ней нет намеренно — предупреждение висит прямо в окне.
+### The chart size comes from the code-behind
 
-*Цена:* ею можно сломать свою же базу. Это принято.
+`ActualWidth` is read-only, there is nothing to bind it with. There are two handlers
+(`SizeChanged` and `DataContextChanged`) because the size and the model arrive
+in an unpredictable order; with `SizeChanged` alone the chart was once built
+with zero width and stayed that way.
+
+*Instead:* an attached observer property — forty lines of infrastructure for
+the same result.
+
+### All colors live in one dictionary
+
+There is not a single hex value in the markup. There used to be seventeen,
+two of them almost identical (`#FF262A35` and `#FF272A35`) — a difference of one
+in a single channel, indistinguishable to the eye and almost certainly accidental.
+
+### Column widths — via `SharedSizeGroup`
+
+The header and the rows belong to the same groups and cannot drift apart. Widths used to
+be written as numbers in four places.
+
+---
+
+## Languages
+
+### Strings are an abstract class, not `.resx`
+
+A missing translation must be a build error. All labels in `Strings` are declared
+abstract, so a new key won't let the build pass until both languages translate it.
+
+*Instead:* `.resx` resource files — the standard .NET way, with tooling for
+translators and satellite assemblies. Rejected: there are no translators here, and a missing
+key in `.resx` silently returns an empty string, and only at run time.
+
+### The language is chosen at build time, not in the settings
+
+The Russian and English versions are two separate `.exe` files. A language drop-down in the menu
+under the gear looked out of place, and two builds are more honest: a person downloads their own
+and never sees the other one.
+
+The side benefit turned out bigger than expected: the code lost the language-change event,
+the subscriptions to it in five models, the `Language` setting in the database, the `LanguageOption` type
+and the rebuilding of the period list. Switching on the fly cost noticeably more than
+it seemed until it was removed.
+
+*Cost:* to change the language you have to download the other file. The database is shared — both
+versions read and write the same schema.
+
+### The language constant is added by a target, not a conditional `PropertyGroup`
+
+`AppLanguage` comes from the publish profile, and the profile is imported **after**
+the body of the `.csproj` has been evaluated. A condition in a `PropertyGroup` won't see it: that is exactly why
+the first English build came out Russian. The `AddLanguageConstant` target
+runs after all the imports.
+
+### Dates stayed European in both languages
+
+`16.10.2026` in English too. The application is personal, the format is familiar, and translating dates
+would have doubled the formatting tests without giving anything.
+
+### The period list is not rebuilt when the language changes
+
+The items stay the same objects, only their labels change. The list cannot be
+swapped: `ComboBox` won't find the selected item in the new list and will set it to `null`,
+and the whole screen is computed from an empty period. That is exactly how the statistics screen
+once crashed — there is a test for it now.
+
+### The reserved "no type" name is forbidden in both languages at once
+
+`WorkTypes.ReservedNames` does not depend on the current language. Otherwise a type created
+in the English interface as «Без типа» (the Russian "No type"), after switching to Russian, would merge
+with the bucket for entries without a type.
+
+---
+
+## Project
+
+### Everything is `internal`
+
+This is an application, not a library; nothing is exposed to the outside. Tests see internal
+types through `InternalsVisibleTo`.
+
+A side benefit: the `CA1062` rule (`null` checks on arguments) is turned off
+with good reason — calls from outside the assembly simply never happen.
+
+### Warnings are build errors
+
+"It built" means "it built cleanly". Three rules are turned off in `.editorconfig`
+with explanations, four places are suppressed individually with an attribute and a justification.
+
+### There is no XML documentation
+
+Explanations live in `docs/` and in short comments where the behavior is not obvious.
+A doc comment above `public string Type { get; }` that retells
+the property name adds nothing and is the first thing to go stale.
+
+### Comments answer "why"
+
+If a comment retells the code, it is redundant. If it explains why a non-obvious
+approach was chosen, it is needed, and there are about thirty of those in the project.
+
+### Tests live inside the project folder
+
+`tests/Pomidoro.Tests/`, not as a separate tree alongside. This keeps the repository
+flat and the path to the `.exe` unchanged.
+
+*Cost:* `Pomidoro.csproj` has to exclude `tests\**` from compilation explicitly,
+otherwise the SDK would pull those files into the main project.
+
+### WinForms in a WPF project
+
+Only for `NotifyIcon` — WPF has no tray icon of its own. The implicit WinForms `using`s
+must be removed, otherwise types with the same names clash all over the code.
+
+### The icon and the sound are drawn in memory
+
+Neither a `.ico` nor a `.wav` is needed next to the application, and the user's system sounds
+play no part. For single-file publishing it also means one file instead of three.
+
+### The developer console exists at all
+
+A tool for myself: look at the history, fix a typo, check a hypothesis.
+There are deliberately no checks in it — the warning is shown right in the window.
+
+*Cost:* you can break your own database with it. That is accepted.
